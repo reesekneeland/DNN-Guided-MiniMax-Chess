@@ -1,6 +1,8 @@
 import chess
 
-def makeMove(board, moveStr):
+def makeMove(board, sanStr):
+    moveStr = str(board.parse_san(sanStr))
+    print(moveStr)
     move = chess.Move.from_uci(moveStr)
     if(move in board.legal_moves):
         board.push(move)
