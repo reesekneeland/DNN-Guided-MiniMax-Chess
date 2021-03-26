@@ -22,8 +22,14 @@ while(True):
     if(gameState > 0):
         if(raw_input == "undo"):
             undoMove(board)
+            continue
+        if(raw_input == "print"):
+            evalBoard(board)
+            continue
         if(raw_input == "reset"):
             resetBoard(board)
+            gameState = 0
+            continue
         else:
             if(makeMove(board, raw_input) == 1):
                 pass
