@@ -26,7 +26,32 @@ def getMoveList(board):
     moveList = moveStrList.split(", ")
     return moveList
 
+def getMultiplierMap(board, piece, color):
+    if(color == chess.BLACK):
+        if(piece == chess.PAWN):
+            return blackPawnMap
+        elif(piece == chess.KNIGHT):
+            return blackKnightMap
+        elif(piece == chess.BISHOP):
+            return blackBishopMap
+        elif(piece == chess.ROOK):
+            return blackRookMap
+        elif(piece == chess.QUEEN):
+            return blackQueenMap
+    if(color == chess.WHITE):
+        if(piece == chess.PAWN):
+            return whitePawnMap
+        elif(piece == chess.KNIGHT):
+            return whiteKnightMap
+        elif(piece == chess.BISHOP):
+            return whiteBishopMap
+        elif(piece == chess.ROOK):
+            return whiteRookMap
+        elif(piece == chess.QUEEN):
+            return whiteQueenMap
+
 def getPieceMap(board, piece, color):
+    multiplierMap = getMultiplierMap(board, piece, color)
     boardStr = str(board.pieces(piece, color))
     boardStr.replace(".", "0.0")
     boardList = re.split(' |\n', boardStr)
@@ -34,14 +59,42 @@ def getPieceMap(board, piece, color):
         if(value == "."):
             boardList[x] = 0.0
         if(value == "1"):
-            boardList[x] = 1.0
-    print(len(boardList))
+            boardList[x] = 1.0 * getPieceValue(piece)
 
     res_list = []
+    print("len of boardlist: " + str(len(boardList)))
     for i in range(0, len(boardList)):
-        res_list.append(boardList[i] * whiteKnightMap[i])
-
+        if(getAttackers(board, i, color) >= 0):
+            res_list.append(boardList[i] * multiplierMap[i])
+        else:
+            attackFactor = -1/(getAttackers(board, i, color) - 1)
+            print(str(i) + ":" + str(attackFactor))
+            res_list.append(boardList[i] * multiplierMap[i] * attackFactor)
     return res_list
+
+def getAttackers(board, square, color):
+    if(color == chess.WHITE):
+        return len(board.attackers(chess.WHITE, square)) - len(board.attackers(chess.BLACK, square))
+    elif(color == chess.BLACK):
+        return len(board.attackers(chess.BLACK, square)) - len(board.attackers(chess.WHITE, square))
+
+def getAttackerMap(board):
+    attackList = []
+    for i in range(0, 63):
+        attackList.append(getAttackers(board, i))
+    return attackList
+
+def getPieceValue(piece):
+    if(piece == chess.PAWN):
+        return 1.0
+    elif(piece == chess.KNIGHT):
+        return 3.0
+    elif(piece == chess.BISHOP):
+        return 3.0
+    elif(piece == chess.ROOK):
+        return 4.0
+    elif(piece == chess.QUEEN):
+        return 9.0
 
 def getCurPlayer(board):
     if(board.turn == chess.WHITE):
@@ -96,7 +149,8 @@ def evalBoard(board):
         print("Stalemate! The game ends in a draw")
     else:
         print("Possible moves for " + getCurPlayer(board) + ": " + str(getMoveList(board)))
-        print(getPieceMap(board, chess.KNIGHT, chess.WHITE))
+        # print(getPieceMap(board, chess.KNIGHT, chess.WHITE))
+        # print(getAttackerMap(board))
 
 def heuristic(board):
     if(str(board.result()) == "0-1"):
