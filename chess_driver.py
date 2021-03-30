@@ -1,6 +1,8 @@
 import chess
 import sys
 from funcs import *
+from minimax import *
+
 
 board = chess.Board()
 gameState = 0
