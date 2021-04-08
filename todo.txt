@@ -1,0 +1,3 @@
+add detailed addition to getAttackers that does additional tests to figure out which pieces are protecting a certain square, and return a metric
+based on the point values of the protecting pieces rather than just the number of pieces, this is important so that a rook/queen doesnt get caught
+trading down a pawn if the opponent is attacking with lesser pieces
