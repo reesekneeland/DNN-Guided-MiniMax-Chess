@@ -1,8 +1,24 @@
 import chess
-from minimax import *
+import time
+import random
 from positionMap import *
 import math
 import re
+
+def makeMoveHeur(board, sanStr):
+    try:
+        moveStr = str(board.parse_san(sanStr))
+        move = chess.Move.from_uci(moveStr)
+    except:
+        print("Move " + sanStr + " not legal, try again. The legal moves for " + getCurPlayer(board) + " are : " + str(getMoveList(board)))
+        return -10000
+    if(move in board.legal_moves):
+        board.push(move)
+        heur = heuristic(board)
+        return heur
+    else:
+        print("Move " + move + " not legal, try again. The legal moves for " + getCurPlayer(board) + " are : " + str(getMoveList(board)))
+        return -10000
 
 def makeMove(board, sanStr):
     try:
@@ -13,8 +29,6 @@ def makeMove(board, sanStr):
         return 0
     if(move in board.legal_moves):
         board.push(move)
-        print("Black value is: " + str(blackValue(board)))
-        print("White value is: " + str(whiteValue(board)))
         return 1
     else:
         print("Move not legal, try again. The legal moves for " + getCurPlayer(board) + " are : " + str(getMoveList(board)))
@@ -25,6 +39,27 @@ def getMoveList(board):
     moveStrList = moveStrList[39:-2]
     moveList = moveStrList.split(", ")
     return moveList
+
+def convertCoordinates(i):
+    notationMap = [
+        56, 57, 58, 59, 60, 61, 62, 63,
+        48, 49, 50, 51, 52, 53, 54, 55,
+        40, 41, 42, 43, 44, 45, 46, 47,
+        32, 33, 34, 35, 36, 37, 38 ,39,
+        24, 25, 26, 27, 28, 29, 30, 31,
+        16, 17, 18, 19, 20, 21, 22, 23,
+        8, 9, 10, 11, 12, 13, 14, 15,
+        0, 1, 2, 3, 4, 5, 6, 7
+    ]
+    return notationMap[i]
+
+def getFen(board):
+    print("Your board string is: ")
+    print(board.fen())
+
+def setFen(fen, board):
+    board.set_fen(fen)
+    print("Board has been set to: " + fen)
 
 def getMultiplierMap(board, piece, color):
     if(color == chess.BLACK):
@@ -109,21 +144,19 @@ def getBoardMap(board):
     res_list = []
     for i in range(0, len(pieceMap)):
         if(pieceMap[i] > 0):
-            if(getAttackers(board, i, chess.WHITE) >= 0):
-                attackFactor = 1.0 + getAttackers(board, i, chess.WHITE)/3
+            if(getAttackers(board, convertCoordinates(i), chess.BLACK) >= 0):
+                attackFactor = 1.0 + getAttackers(board, convertCoordinates(i), chess.BLACK)/5
             else:
                 attackFactor = 0.1
         elif(pieceMap[i] < 0):
-            if(getAttackers(board, i, chess.BLACK) >= 0):
-                attackFactor = 1.0 + getAttackers(board, i, chess.BLACK)/3
+            if(getAttackers(board, convertCoordinates(i), chess.WHITE) >= 0):
+                attackFactor = 1.0 + getAttackers(board, convertCoordinates(i), chess.WHITE)/5
             else:
                 attackFactor = 0.1
         else:
             attackFactor = 1.0
-        print(attackFactor)
 
         res_list.append(round(pieceMap[i] * attackFactor, 2))
-    print(sum(res_list))
     return res_list
         
 
@@ -210,6 +243,9 @@ def blackValue(board):
     queenv = 9 * len(board.pieces(chess.QUEEN, chess.BLACK))
     return pawnv + knightv + bishopv + rookv + queenv
 
+def gameOver(board):
+    return board.is_game_over()
+
 def evalBoard(board):
     print("\nblack\n---------------")
     print(board)
@@ -224,16 +260,66 @@ def evalBoard(board):
         print("Stalemate! The game ends in a draw")
     else:
         print("Possible moves for " + getCurPlayer(board) + ": " + str(getMoveList(board)))
-        print(getBoardMap(board))
-        # print(getAttackerMap(board))
 
 def heuristic(board):
     if(str(board.result()) == "0-1"):
         return -100
     elif(str(board.result()) == "1-0"):
         return 100
-    # if()
+    positionDif = sum(getBoardMap(board))
     pointDif = whiteValue(board) - blackValue(board)
+    positionHeuristic = 83 * math.atan(positionDif/15)
     valueHeuristic = 83 * math.atan(pointDif/15)
-    totalHeuristic = 1 * valueHeuristic
-    return totalHeuristic
+    totalHeuristic = 0.8 * valueHeuristic + 0.2 * positionHeuristic
+    return round(totalHeuristic, 2)
+
+def choose_action(board):
+    """
+    Predict the move using minimax algorithm
+    Parameters
+    ----------
+    board : board
+    Returns
+    -------
+    float, str:
+        The evaluation or utility and the action key name
+    """
+
+    start_time = time.time()
+
+    print("MINIMAX AB : Wait AI is choosing")
+    eval_score, action = _minimax(0,board,True,float('-inf'),float('inf'))
+    print("MINIMAX : Done, eval = %d" % (eval_score))
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    return (action)
+
+def _minimax(current_depth, board, is_max_turn, alpha, beta):
+
+    if current_depth == 3 or gameOver(board):
+        return heuristic(board), ""
+
+    possible_actions = getMoveList(board)
+
+    random.shuffle(possible_actions) #randomness
+    best_value = float('-inf') if is_max_turn else float('inf')
+    action_target = ""
+    for move_key in possible_actions:
+        makeMoveHeur(board, move_key)
+
+        eval_child, action_child = _minimax(current_depth+1,board,not is_max_turn, alpha, beta)
+        board.pop()
+        if is_max_turn and best_value < eval_child:
+            best_value = eval_child
+            action_target = move_key
+            alpha = max(alpha, best_value)
+            if beta <= alpha:
+                break
+
+        elif (not is_max_turn) and best_value > eval_child:
+            best_value = eval_child
+            action_target = move_key
+            beta = min(beta, best_value)
+            if beta <= alpha:
+                break
+    return best_value, action_target 
