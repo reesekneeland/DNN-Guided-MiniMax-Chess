@@ -3,12 +3,10 @@ import sys
 from funcs import *
 
 
-board = chess.Board()
-gameState = 0
-setState = 0
+game = MiniMaxChess()
 #main input loop
 while(True):
-    if(gameState == 0):
+    if(game.gameState == 0):
         print("Welcome to MiniMax Chess! Please enter the type of game you would like to play, 1 for singleplayer, 2 to play vs an AI, and 3 to have the AI play itself")
     raw_input = ""
     try:
@@ -21,64 +19,68 @@ while(True):
         raw_input = "exit"
     if(raw_input == "exit" or raw_input == "quit"):
             sys.exit()
-    if(setState == 1):
-        setFen(raw_input, board)
-        evalBoard(board)
-        setState = 0
+    if(game.setState == 1):
+        game.setFen(raw_input)
+        game.evalBoard()
+        game.setState = 0
         continue
-    if(gameState > 0):
+    if(game.gameState > 0):
         if(raw_input == "undo"):
-            undoMove(board)
+            game.undoMove()
             continue
         if(raw_input == "get"):
-            getFen(board)
+            game.getFen()
             continue
         if(raw_input == "set"):
             print("Please enter your board string.")
-            setState = 1
+            game.setState = 1
             continue
         if(raw_input == "print"):
-            evalBoard(board)
+            game.evalBoard()
             continue
         if(raw_input == "reset"):
-            resetBoard(board)
-            gameState = 0
+            game.resetBoard()
+            game.gameState = 0
             continue
-        if(gameState == 1):
-            if(makeMove(board, raw_input) == 1):
-                evalBoard(board)
-                print(choose_action(board))
+        if(game.gameState == 1):
+            if(game.makeMove(raw_input) == 1):
+                game.evalBoard()
+                print("MINIMAX AB : Wait AI is choosing\n")
+                print(game.choose_action())
                 pass
             else:
                 continue
-        elif(gameState == 2):
-            if(makeMove(board, raw_input) == 1):
-                evalBoard(board)
-                makeMove(board, choose_action(board))
-                evalBoard(board)
+        elif(game.gameState == 2):
+            if(game.makeMove(raw_input) == 1):
+                game.evalBoard()
+                print("MINIMAX AB : Wait AI is choosing\n")
+                game.makeMove(game.choose_action())
+                game.evalBoard()
                 pass
             else:
                 continue
-        elif(gameState == 3):
-            while(gameOver(board) == False):
-                makeMove(board, choose_action(board))
-                evalBoard(board)
-    if(gameState <= 0):
+        elif(game.gameState == 3):
+            while(game.gameOver() == False):
+                print("MINIMAX AB : Wait AI is choosing\n")
+                game.makeMove(game.choose_action())
+                game.evalBoard()
+    if(game.gameState <= 0):
         if(raw_input == "1"): 
-            gameState = 1
+            game.gameState = 1
             print("You have chosen singleplayer!")
-            evalBoard(board)
-            print(choose_action(board))
+            game.evalBoard()
+            print("MINIMAX AB : Wait AI is choosing\n")
+            print(game.choose_action())
         elif(raw_input == "2"): 
-            gameState = 2
+            game.gameState = 2
             print("You have chosen to play against an AI!")
-            evalBoard(board)
+            game.evalBoard()
         elif(raw_input == "3"): 
-            gameState = 3
+            game.gameState = 3
             print("You have chosen to watch the AI play itself!")
-            evalBoard(board)
+            game.evalBoard()
         else:
-            gameState = -1
+            game.gameState = -1
             print("That is not a recognized gamemode! Please try again.")
     if(raw_input == ""): continue
     
