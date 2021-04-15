@@ -5,16 +5,18 @@ from positionMap import *
 import math
 import re
 
+
 class MiniMaxChess:
 
-    board = chess.Board()
-    gameState = 0
-    setState = 0
-
-    def init(self):
+    def __init__(self, fen):
         self.board = chess.Board()
+        try:
+            self.board.set_board_fen(fen)
+        except:
+            self.board.set_board_fen(chess.STARTING_BOARD_FEN)
         self.gameState = 0
         self.setState = 0
+        self.pid = -1
 
     def makeMoveHeur(self, sanStr):
         try:
@@ -65,7 +67,7 @@ class MiniMaxChess:
         return notationMap[i]
 
     def getFen(self):
-        return("Your board string is: %s" % self.board.fen())
+        return(self.board.fen())
 
     def setFen(self, fen):
         self.board.set_fen(fen)
@@ -213,6 +215,8 @@ class MiniMaxChess:
             return 4.0
         elif(piece == chess.QUEEN):
             return 9.0
+    def getBoard(self):
+        return self.board
 
     def getCurPlayer(self):
         if(self.board.turn == chess.WHITE):
@@ -284,7 +288,8 @@ class MiniMaxChess:
         valueHeuristic = 83 * math.atan(pointDif/15)
         totalHeuristic = 0.8 * valueHeuristic + 0.2 * positionHeuristic
         return round(totalHeuristic, 2)
-
+    
+    # from minimax import minimax
     def choose_action(self):
         # """
         # Predict the move using minimax algorithm
@@ -299,11 +304,13 @@ class MiniMaxChess:
 
         start_time = time.time()
 
-        eval_score, action = self.minimax(0,True,float('-inf'),float('inf'))
+        eval_score, action = minimax(self.getFen(),0,True,float('-inf'),float('inf'))
         returnStr = ("MINIMAX : Done, eval = %d\n" % (eval_score))
         returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
         returnStr += ("MINIMAX : Chosen move: %s" % action)
         return returnStr
+
+    
 
     def choose_action_pure(self):
         # """
@@ -317,35 +324,35 @@ class MiniMaxChess:
         #     The evaluation or utility and the action key name
         # """
 
-        eval_score, action = self.minimax(0,True,float('-inf'),float('inf'))
+        eval_score, action = minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
         return action
 
-    def minimax(self, current_depth, is_max_turn, alpha, beta):
+def minimax(fen, current_depth, is_max_turn, alpha, beta):
+    chessObj = MiniMaxChess(fen)
+    if current_depth == 3 or chessObj.gameOver():
+        return chessObj.heuristic(), ""
 
-        if current_depth == 3 or self.gameOver():
-            return self.heuristic(), ""
+    possible_actions = chessObj.getMoveList()
 
-        possible_actions = self.getMoveList()
+    # random.shuffle(possible_actions) #randomness
+    best_value = float('-inf') if is_max_turn else float('inf')
+    action = ""
+    for move_key in possible_actions:
+        chessObj.makeMoveHeur(str(move_key))
 
-        # random.shuffle(possible_actions) #randomness
-        best_value = float('-inf') if is_max_turn else float('inf')
-        action_target = ""
-        for move_key in possible_actions:
-            self.makeMoveHeur(str(move_key))
+        eval_child, action_child = minimax(chessObj.getFen,current_depth+1,not is_max_turn, alpha, beta)
+        chessObj.board.pop()
+        if is_max_turn and best_value < eval_child:
+            best_value = eval_child
+            action = move_key
+            alpha = max(alpha, best_value)
+            if beta <= alpha:
+                break
 
-            eval_child, action_child = self.minimax(current_depth+1,not is_max_turn, alpha, beta)
-            self.board.pop()
-            if is_max_turn and best_value < eval_child:
-                best_value = eval_child
-                action_target = move_key
-                alpha = max(alpha, best_value)
-                if beta <= alpha:
-                    break
-
-            elif (not is_max_turn) and best_value > eval_child:
-                best_value = eval_child
-                action_target = move_key
-                beta = min(beta, best_value)
-                if beta <= alpha:
-                    break
-        return best_value, action_target 
+        elif (not is_max_turn) and best_value > eval_child:
+            best_value = eval_child
+            action = move_key
+            beta = min(beta, best_value)
+            if beta <= alpha:
+                break
+    return best_value, action

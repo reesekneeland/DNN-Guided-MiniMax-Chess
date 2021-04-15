@@ -1,63 +1,33 @@
 import chess
 import sys
-from funcs import *
+from funcs import MiniMaxChess
 
+def minimax(board, current_depth, is_max_turn, alpha, beta):
+    chessObj = MiniMaxChess()
+    if current_depth == 3 or chessObj.gameOver():
+        return chessObj.heuristic(), ""
 
-# Python3 program to demonstrate 
-# working of Alpha-Beta Pruning 
-#I GOT THIS OFF THE INTERNET ITS NOT MINE AND IT PROBABLY WONT WORK
-  
-# Initial values of Aplha and Beta 
-MAX, MIN = 100, -100
-  
-# Returns optimal value for current player 
-#(Initially called for root and maximizer) 
-def minimax(depth, nodeIndex, maximizingPlayer, 
-            values, alpha, beta): 
-   
-    # Terminating condition. i.e 
-    # leaf node is reached 
-    if depth == 3: 
-        return values[nodeIndex] 
-  
-    if maximizingPlayer: 
-       
-        best = MIN 
-  
-        # Recur for left and right children 
-        for i in range(0, 2): 
-              
-            val = minimax(depth + 1, nodeIndex * 2 + i, 
-                          False, values, alpha, beta) 
-            best = max(best, val) 
-            alpha = max(alpha, best) 
-  
-            # Alpha Beta Pruning 
-            if beta <= alpha: 
-                break 
-           
-        return best 
-       
-    else:
-        best = MAX 
-  
-        # Recur for left and 
-        # right children 
-        for i in range(0, 2): 
-           
-            val = minimax(depth + 1, nodeIndex * 2 + i, 
-                            True, values, alpha, beta) 
-            best = min(best, val) 
-            beta = min(beta, best) 
-  
-            # Alpha Beta Pruning 
-            if beta <= alpha: 
-                break 
-           
-        return best 
-       
-# Driver Code 
-if __name__ == "__main__": 
-   
-    values = [3, 5, 6, 9, 1, 2, 0, -1]  
-    print("The optimal value is :", minimax(0, 0, True, values, MIN, MAX)) 
+    possible_actions = chessObj.getMoveList()
+
+    # random.shuffle(possible_actions) #randomness
+    best_value = float('-inf') if is_max_turn else float('inf')
+    action = ""
+    for move_key in possible_actions:
+        chessObj.makeMoveHeur(str(move_key))
+
+        eval_child, action_child = minimax(chessObj,current_depth+1,not is_max_turn, alpha, beta)
+        chessObj.board.pop()
+        if is_max_turn and best_value < eval_child:
+            best_value = eval_child
+            action = move_key
+            alpha = max(alpha, best_value)
+            if beta <= alpha:
+                break
+
+        elif (not is_max_turn) and best_value > eval_child:
+            best_value = eval_child
+            action = move_key
+            beta = min(beta, best_value)
+            if beta <= alpha:
+                break
+    return best_value, action

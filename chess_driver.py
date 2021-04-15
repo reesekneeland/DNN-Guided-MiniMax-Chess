@@ -1,9 +1,9 @@
 import chess
 import sys
 from funcs import *
+from minimax import *
 
-
-game = MiniMaxChess()
+game = MiniMaxChess(0)
 #main input loop
 while(True):
     if(game.gameState == 0):

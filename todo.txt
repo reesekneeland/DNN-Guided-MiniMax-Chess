@@ -1,3 +1,7 @@
 add detailed addition to getAttackers that does additional tests to figure out which pieces are protecting a certain square, and return a metric
 based on the point values of the protecting pieces rather than just the number of pieces, this is important so that a rook/queen doesnt get caught
 trading down a pawn if the opponent is attacking with lesser pieces
+
+add discord emoji conversion method to print out a neat chess board in discord bot
+
+fix minimax algorithm and get it ready for jacob to add multiprocessing to
