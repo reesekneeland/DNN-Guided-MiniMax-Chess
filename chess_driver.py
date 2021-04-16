@@ -1,7 +1,7 @@
 import chess
 import sys
 from funcs import *
-from minimax import *
+
 
 game = MiniMaxChess(0)
 #main input loop
@@ -29,7 +29,7 @@ while(True):
             game.undoMove()
             continue
         if(raw_input == "get"):
-            game.getFen()
+            print(game.getFen())
             continue
         if(raw_input == "set"):
             print("Please enter your board string.")

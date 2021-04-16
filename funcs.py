@@ -11,12 +11,23 @@ class MiniMaxChess:
     def __init__(self, fen):
         self.board = chess.Board()
         try:
-            self.board.set_board_fen(fen)
+            self.board.set_fen(fen)
         except:
-            self.board.set_board_fen(chess.STARTING_BOARD_FEN)
+            self.board.set_fen(chess.STARTING_BOARD_FEN)
         self.gameState = 0
         self.setState = 0
         self.pid = -1
+
+    def makeMovePure(self, sanStr):
+        try:
+            moveStr = str(self.board.parse_san(sanStr))
+            move = chess.Move.from_uci(moveStr)
+        except:
+            print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
+        if(move in self.board.legal_moves):
+            self.board .push(move)
+        else:
+            print("Move " + move + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
 
     def makeMoveHeur(self, sanStr):
         try:
@@ -264,7 +275,7 @@ class MiniMaxChess:
         returnStr = "\nblack\n"
         returnStr += ("```" + str(self.board) + "```")
         returnStr += ("white\n")
-        returnStr += ("Current Heuristic: " + str(self.heuristic()) + "\n")
+        # returnStr += ("Current Heuristic: " + str(self.heuristic()) + "\n")
         
         if(self.board.is_checkmate()):
             returnStr += (self.getCurPlayer() + " has been checkmated! " + self.getNextPlayer() + " wins!")
@@ -329,18 +340,22 @@ class MiniMaxChess:
 
 def minimax(fen, current_depth, is_max_turn, alpha, beta):
     chessObj = MiniMaxChess(fen)
-    if current_depth == 3 or chessObj.gameOver():
+    if (current_depth == 3 or chessObj.board.is_game_over()):
         return chessObj.heuristic(), ""
 
     possible_actions = chessObj.getMoveList()
-
-    # random.shuffle(possible_actions) #randomness
+    # print(possible_actions)
+    random.shuffle(possible_actions) #randomness
     best_value = float('-inf') if is_max_turn else float('inf')
     action = ""
     for move_key in possible_actions:
-        chessObj.makeMoveHeur(str(move_key))
 
-        eval_child, action_child = minimax(chessObj.getFen,current_depth+1,not is_max_turn, alpha, beta)
+        chessObj.makeMovePure(str(move_key))
+        # print(chessObj.board.fen())
+        # chessObj.evalBoard()
+
+        eval_child, action_child = minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
+        
         chessObj.board.pop()
         if is_max_turn and best_value < eval_child:
             best_value = eval_child
@@ -355,4 +370,8 @@ def minimax(fen, current_depth, is_max_turn, alpha, beta):
             beta = min(beta, best_value)
             if beta <= alpha:
                 break
+    del chessObj
+    print(action)
     return best_value, action
+
+    
