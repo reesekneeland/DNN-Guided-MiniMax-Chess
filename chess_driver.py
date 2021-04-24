@@ -60,10 +60,7 @@ while(True):
             else:
                 continue
         elif(game.gameState == 3):
-            while(game.gameOver() == False):
-                print("MINIMAX AB : Wait AI is choosing\n")
-                game.makeMove(game.choose_action())
-                game.evalBoard()
+            continue
     if(game.gameState <= 0):
         if(raw_input == "1"): 
             game.gameState = 1
@@ -79,6 +76,15 @@ while(True):
             game.gameState = 3
             print("You have chosen to watch the AI play itself!")
             game.evalBoard()
+            while(game.gameOver() == False):
+                print("MINIMAX AB : Wait AI is choosing\n")
+                move = str(game.choose_action_pure())
+                if(game.makeMove(move) == 1):
+                    print(game.choose_action())
+                    game.evalBoard()
+                else:
+                    print("move  failed")
+                    continue
         else:
             game.gameState = -1
             print("That is not a recognized gamemode! Please try again.")

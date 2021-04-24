@@ -371,7 +371,7 @@ def minimax(fen, current_depth, is_max_turn, alpha, beta):
             if beta <= alpha:
                 break
     del chessObj
-    print(action)
-    return best_value, action
+    # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
+    return best_value, str(action)
 
     
