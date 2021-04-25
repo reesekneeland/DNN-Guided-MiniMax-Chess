@@ -432,7 +432,7 @@ class MiniMaxChess:
 
         start_time = time.time()
 
-        eval_score, action = minimax(self.getFen(),0,True,float('-inf'),float('inf'))
+        eval_score, action = self.minimax(self.getFen(),0,True,float('-inf'),float('inf'))
         returnStr = ("MINIMAX : Done, eval = %d\n" % (eval_score))
         returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
         returnStr += ("MINIMAX : Chosen move: %s" % action)
@@ -452,43 +452,42 @@ class MiniMaxChess:
         #     The evaluation or utility and the action key name
         # """
 
-        eval_score, action = minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
+        eval_score, action = self.minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
         return action
 
-def minimax(fen, current_depth, is_max_turn, alpha, beta):
-    chessObj = MiniMaxChess(fen)
-    if (current_depth == 3 or chessObj.board.is_game_over()):
-        return chessObj.heuristic(), ""
+    @staticmethod
+    def minimax(fen, current_depth, is_max_turn, alpha, beta):
+        chessObj = MiniMaxChess(fen)
+        if (current_depth == 3 or chessObj.board.is_game_over()):
+            return chessObj.heuristic(), ""
 
-    possible_actions = chessObj.getMoveList()
-    # print(possible_actions)
-    random.shuffle(possible_actions) #randomness
-    best_value = float('-inf') if is_max_turn else float('inf')
-    action = ""
-    for move_key in possible_actions:
+        possible_actions = chessObj.getMoveList()
+        # print(possible_actions)
+        random.shuffle(possible_actions) #randomness
+        best_value = float('-inf') if is_max_turn else float('inf')
+        action = ""
+        for move_key in possible_actions:
 
-        chessObj.makeMovePure(str(move_key))
-        # print(chessObj.board.fen())
-        # chessObj.evalBoard()
+            chessObj.makeMovePure(str(move_key))
+            # print(chessObj.board.fen())
+            # chessObj.evalBoard()
 
-        eval_child, action_child = minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
-        
-        chessObj.board.pop()
-        if is_max_turn and best_value < eval_child:
-            best_value = eval_child
-            action = move_key
-            alpha = max(alpha, best_value)
-            if beta <= alpha:
-                break
+            eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
+            
+            chessObj.board.pop()
+            if is_max_turn and best_value < eval_child:
+                best_value = eval_child
+                action = move_key
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break
 
-        elif (not is_max_turn) and best_value > eval_child:
-            best_value = eval_child
-            action = move_key
-            beta = min(beta, best_value)
-            if beta <= alpha:
-                break
-    del chessObj
-    # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
-    return best_value, str(action)
-
-    
+            elif (not is_max_turn) and best_value > eval_child:
+                best_value = eval_child
+                action = move_key
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break
+        del chessObj
+        # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
+        return best_value, str(action)
