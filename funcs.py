@@ -271,6 +271,123 @@ class MiniMaxChess:
     def gameOver(self):
         return self.board.is_game_over()
 
+    def emojiConvert(self):
+        boardStr = str(self.board)
+        eStr = ""
+        count = 0
+        for x in boardStr:
+            count += 1
+            if(count == 1):
+                eStr += ":eight:"
+            if(count == 10):
+                eStr += ":seven:"
+            if(count == 19):
+                eStr += ":six:"
+            if(count == 28):
+                eStr += ":five:"
+            if(count == 37):
+                eStr += ":four:"
+            if(count == 46):
+                eStr += ":three:"
+            if(count == 55):
+                eStr += ":two:"
+            if(count == 64):
+                eStr += ":one:"
+            if x == "\n":
+                eStr += ("\n")
+            elif x == ".":
+                if (count % 2) == 0:
+                    eStr += ("<:dark_square:835909517304660009>")
+                else:
+                    eStr += ("<:light_square:835909517572177970>")
+            elif x == "r":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_rook:835909517656457257>")
+                else:
+                    eStr += ("<:b_l_rook:835909517644267530>")
+            elif x == "n":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_knight:835909517665501234>")
+                else:
+                    eStr += ("<:b_l_knight:835909517710852136>")
+            elif x == "p":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_pawn:835909517652787273>")
+                else:
+                    eStr += ("<:b_l_pawn:835909517781762098>")
+            elif x == "b":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_bishop:835909517530890322>")
+                else:
+                    eStr += ("<:b_l_bishop:835909517178699861>")
+            elif x == "q":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_queen:835909517404536844>")
+                else:
+                    eStr += ("<:b_l_queen:835909517744930876>")
+            elif x == "k":
+                if (count % 2) == 0:
+                    eStr += ("<:b_d_king:835909517543211029>")
+                else:
+                    eStr += ("<:b_l_king:835910672054222868>")
+            elif x == "R":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_rook:835909517564444733>")
+                else:
+                    eStr += ("<:w_l_rook:835909517786087444>")
+            elif x == "N":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_knight:835909517896187945>")
+                else:
+                    eStr += ("<:w_l_knight:835909517451067423>")
+            elif x == "P":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_pawn:835909517769179198>")
+                else:
+                    eStr += ("<:w_l_pawn:835909517883342879>")
+            elif x == "B":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_bishop:835909517635223633>")
+                else:
+                    eStr += ("<:w_l_bishop:835909517882687508>")
+            elif x == "Q":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_queen:835909517911785523>")
+                else:
+                    eStr += ("<:w_l_queen:835909517806927912>")
+            elif x == "K":
+                if (count % 2) == 0:
+                    eStr += ("<:w_d_king:835909517500874804>")
+                else:
+                    eStr += ("<:w_l_king:835909517635485757>")
+            else:
+                count -= 1
+            
+            if(count == 27):
+                eStr2 = eStr
+                eStr = ""
+            if(count == 54):
+                eStr3 = eStr
+                eStr = ""
+        eStr += ("\n:black_large_square::regional_indicator_a::regional_indicator_b::regional_indicator_c::regional_indicator_d::regional_indicator_e::regional_indicator_f::regional_indicator_g::regional_indicator_h:")
+        return eStr2, eStr3, eStr
+
+    def evalDiscBoard(self):
+        returnStr, returnStr2, returnStr3 = self.emojiConvert()
+        print("calculating msg4")
+        returnStr4 = ("\nCurrent Heuristic: " + str(self.heuristic()) + "\n")
+        
+        if(self.board.is_checkmate()):
+            returnStr4 += ("\n" + self.getCurPlayer() + " has been checkmated! " + self.getNextPlayer() + " wins!")
+        elif(self.board.is_check()):
+            returnStr4 += ("\n" + self.getCurPlayer() + " is in check! Possible moves are: " + str(self.getMoveList()))
+        elif(self.board.is_stalemate()):
+            returnStr4 += ("\nStalemate! The game ends in a draw")
+        else:
+            returnStr4 += ("\nPossible moves for " + self.getCurPlayer() + ": " + str(self.getMoveList()))
+        print(returnStr + returnStr2 + returnStr3 + returnStr4)
+        return returnStr, returnStr2, returnStr3, returnStr4
+
     def evalBoard(self):
         returnStr = "\nblack\n"
         returnStr += ("```" + str(self.board) + "```")
@@ -286,6 +403,7 @@ class MiniMaxChess:
         else:
             returnStr += ("Possible moves for " + self.getCurPlayer() + ": " + str(self.getMoveList()))
         print(returnStr)
+        print(self.emojiConvert())
         return returnStr
 
     def heuristic(self):
@@ -299,8 +417,7 @@ class MiniMaxChess:
         valueHeuristic = 83 * math.atan(pointDif/15)
         totalHeuristic = 0.8 * valueHeuristic + 0.2 * positionHeuristic
         return round(totalHeuristic, 2)
-    
-    # from minimax import minimax
+
     def choose_action(self):
         # """
         # Predict the move using minimax algorithm

@@ -10,19 +10,19 @@ import multiprocessing
 load_dotenv()
 client = discord.Client()
 pid = -1
-game = MiniMaxChess()
+game = MiniMaxChess(0)
 
 async def gameMode3(chan):
     channel = client.get_channel(chan)
     await channel.send("MINIMAX AB : Wait AI is choosing\n")
     await channel.send(game.choose_action())
     game.makeMove(game.choose_action_pure())
-    await channel.send(game.evalBoard())
+    await channel.send(game.evalDiscBoard())
     while(game.gameOver() == False):
         await channel.send("MINIMAX AB : Wait AI is choosing\n")
         await channel.send(game.choose_action())
         game.makeMove(game.choose_action_pure())
-        await channel.send(game.evalBoard())
+        await channel.send(game.evalDiscBoard())
             
 
 @client.event
@@ -54,7 +54,11 @@ async def on_message(msg):
                 game.setState == 0
         if(game.setState == 1):
             await msg.channel.send(game.setFen(cmd1))
-            await msg.channel.send(game.evalBoard())
+            msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+            await msg.channel.send(msg1)
+            await msg.channel.send(msg2)
+            await msg.channel.send(msg3)
+            await msg.channel.send(msg4)
             game.setState = 0
         if(game.gameState > 0):
             if(cmd1 == "undo"):
@@ -65,7 +69,11 @@ async def on_message(msg):
                 await msg.channel.send("Please enter your board string.")
                 game.setState = 1
             if(cmd1 == "print"):
-                await msg.channel.send(game.evalBoard())
+                msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                await msg.channel.send(msg1)
+                await msg.channel.send(msg2)
+                await msg.channel.send(msg3)
+                await msg.channel.send(msg4)
             if(cmd1 == "reset"):
                 if(pid == os.getpid()):
                     print(pid)
@@ -74,35 +82,61 @@ async def on_message(msg):
                 await msg.channel.send(game.resetBoard())
             if(game.gameState == 1):
                 if(game.makeMove(cmd1) == 1):
-                    await msg.channel.send(game.evalBoard())
+                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                    await msg.channel.send(msg1)
+                    await msg.channel.send(msg2)
+                    await msg.channel.send(msg3)
+                    await msg.channel.send(msg4)
                     await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
                     await msg.channel.send(game.choose_action())
                 else:
                     await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
             elif(game.gameState == 2):
                 if(game.makeMove(cmd1) == 1):
-                    await msg.channel.send(game.evalBoard())
+                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                    await msg.channel.send(msg1)
+                    await msg.channel.send(msg2)
+                    await msg.channel.send(msg3)
+                    await msg.channel.send(msg4)
                     await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
                     await msg.channel.send(game.choose_action())
                     game.makeMove(game.choose_action_pure())
-                    await msg.channel.send(game.evalBoard())
+                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                    await msg.channel.send(msg1)
+                    await msg.channel.send(msg2)
+                    await msg.channel.send(msg3)
+                    await msg.channel.send(msg4)
                 else:
                     await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
         elif(game.gameState <= 0):
             if(cmd1 == "1"): 
                 game.gameState = 1
                 await msg.channel.send("You have chosen singleplayer!")
-                await msg.channel.send(game.evalBoard())
+                msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                await msg.channel.send(msg1)
+                await msg.channel.send(msg2)
+                await msg.channel.send(msg3)
+                print("waiting to print msg4")
+                await msg.channel.send(msg4)
+                print("prined msg4")
                 await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
                 await msg.channel.send(game.choose_action())
             elif(cmd1 == "2"): 
                 game.gameState = 2
                 await msg.channel.send("You have chosen to play against an AI!")
-                await msg.channel.send(game.evalBoard())
+                msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                await msg.channel.send(msg1)
+                await msg.channel.send(msg2)
+                await msg.channel.send(msg3)
+                await msg.channel.send(msg4)
             elif(cmd1 == "3"): 
                 game.gameState = 3
                 await msg.channel.send("You have chosen to watch the AI play itself!")
-                await msg.channel.send(game.evalBoard())
+                msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                await msg.channel.send(msg1)
+                await msg.channel.send(msg2)
+                await msg.channel.send(msg3)
+                await msg.channel.send(msg4)
                 # if(pid > 0):
                 #     os.kill(pid, 9)
                 pid = os.fork()
@@ -114,7 +148,11 @@ async def on_message(msg):
                         action = game.choose_action()
                         await msg.channel.send(action)
                         game.makeMove(game.choose_action_pure())
-                        await msg.channel.send(game.evalBoard())
+                        msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                        await msg.channel.send(msg1)
+                        await msg.channel.send(msg2)
+                        await msg.channel.send(msg3)
+                        await msg.channel.send(msg4)
                 else:
                     print("I am the parent, my pid is %d", os.getpid())
                 print("Parent is proceeding")
