@@ -89,7 +89,6 @@ while(True):
             game.gameState = -1
             print("That is not a recognized gamemode! Please try again.")
     if(raw_input == ""): continue
-    
-print("Exit")
+
 
         

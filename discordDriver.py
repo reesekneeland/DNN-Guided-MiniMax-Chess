@@ -118,7 +118,7 @@ async def on_message(msg):
                 await msg.channel.send("You have chosen to watch the AI play itself!")
                 if(AIip == 0):
                     AIip == 1
-                    os.system('/home/shared/4511w/Guided-MiniMax-Chess/discAI.py {}' .format(str(discChannel)))
+                    os.system('/home/shared/4511w/Guided-MiniMax-Chess/startDiscAI.sh {}' .format(str(discChannel)))
             else:
                 game.gameState = -1
                 await msg.channel.send("That is not a recognized gamemode! Please try again.")
