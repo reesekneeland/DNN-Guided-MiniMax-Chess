@@ -24,7 +24,6 @@ async def gameMode3(chan):
         game.makeMove(game.choose_action_pure())
         await channel.send(game.evalDiscBoard())
             
-
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -63,24 +62,26 @@ async def on_message(msg):
         if(game.gameState > 0):
             if(cmd1 == "undo"):
                 await msg.channel.send(game.undoMove())
-            if(cmd1 == "get"):
+            elif(cmd1 == "get"):
                 await msg.channel.send(game.getFen())
-            if(cmd1 == "set"):
+            elif(cmd1 == "set"):
                 await msg.channel.send("Please enter your board string.")
                 game.setState = 1
-            if(cmd1 == "print"):
+            elif(cmd1 == "alist"):
+                await msg.channel.send(game.getBoardMap)
+            elif(cmd1 == "print"):
                 msg1, msg2, msg3, msg4 = game.evalDiscBoard()
                 await msg.channel.send(msg1)
                 await msg.channel.send(msg2)
                 await msg.channel.send(msg3)
                 await msg.channel.send(msg4)
-            if(cmd1 == "reset"):
+            elif(cmd1 == "reset"):
                 if(pid == os.getpid()):
                     print(pid)
                     os.kill(pid, 9)
                 game.gameState = 0
                 await msg.channel.send(game.resetBoard())
-            if(game.gameState == 1):
+            elif(game.gameState == 1):
                 if(game.makeMove(cmd1) == 1):
                     msg1, msg2, msg3, msg4 = game.evalDiscBoard()
                     await msg.channel.send(msg1)

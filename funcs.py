@@ -223,7 +223,7 @@ class MiniMaxChess:
         elif(piece == chess.BISHOP):
             return 3.0
         elif(piece == chess.ROOK):
-            return 4.0
+            return 5.0
         elif(piece == chess.QUEEN):
             return 9.0
     def getBoard(self):
@@ -437,8 +437,6 @@ class MiniMaxChess:
         returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
         returnStr += ("MINIMAX : Chosen move: %s" % action)
         return returnStr
-
-    
 
     def choose_action_pure(self):
         # """
