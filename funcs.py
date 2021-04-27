@@ -377,7 +377,7 @@ class MiniMaxChess:
 
     def evalDiscBoard(self):
         returnStr, returnStr2, returnStr3 = self.emojiConvert()
-        print("calculating msg4")
+        print(str(self.board))
         returnStr4 = ("\nCurrent Heuristic: " + str(self.heuristic()) + "\n")
         
         if(self.board.is_checkmate()):
@@ -388,14 +388,14 @@ class MiniMaxChess:
             returnStr4 += ("\nStalemate! The game ends in a draw")
         else:
             returnStr4 += ("\nPossible moves for " + self.getCurPlayer() + ": " + str(self.getMoveList()))
-        print(returnStr + returnStr2 + returnStr3 + returnStr4)
+        # print(returnStr + returnStr2 + returnStr3 + returnStr4)
         return returnStr, returnStr2, returnStr3, returnStr4
 
     def evalBoard(self):
         returnStr = "\nblack\n"
         returnStr += ("```" + str(self.board) + "```")
         returnStr += ("white\n")
-        # returnStr += ("Current Heuristic: " + str(self.heuristic()) + "\n")
+        returnStr += ("Current Heuristic: " + str(self.heuristic()) + "\n")
         
         if(self.board.is_checkmate()):
             returnStr += (self.getCurPlayer() + " has been checkmated! " + self.getNextPlayer() + " wins!")
@@ -406,7 +406,7 @@ class MiniMaxChess:
         else:
             returnStr += ("Possible moves for " + self.getCurPlayer() + ": " + str(self.getMoveList()))
         print(returnStr)
-        print(self.emojiConvert())
+        # print(self.emojiConvert())
         return returnStr
 
     def heuristic(self):
@@ -434,8 +434,10 @@ class MiniMaxChess:
         # """
 
         start_time = time.time()
-
-        eval_score, action = self.minimax(self.getFen(),0,True,float('-inf'),float('inf'))
+        if(self.getCurPlayer() == "white"):
+            eval_score, action = self.minimax(self.getFen(),0,True,float('-inf'),float('inf'))
+        else:
+            eval_score, action = self.minimax(self.getFen(),0,False,float('-inf'),float('inf'))
         returnStr = ("MINIMAX : Done, eval = %d\n" % (eval_score))
         returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
         returnStr += ("MINIMAX : Chosen move: %s" % action)
@@ -452,17 +454,19 @@ class MiniMaxChess:
         # float, str:
         #     The evaluation or utility and the action key name
         # """
-
-        eval_score, action = self.minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
+        if(self.getCurPlayer() == "white"):
+            eval_score, action = self.minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
+        else:
+            eval_score, action = self.minimax(self.getFen(), 0,False,float('-inf'),float('inf'))
         return action
 
     @staticmethod
     def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
-        MAX_PROCESSES = 32
+        MAX_PROCESSES = 24
 
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 4 or chessObj.board.is_game_over()):
+        if (current_depth == 3 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
 
         possible_actions = chessObj.getMoveList()
@@ -493,10 +497,14 @@ class MiniMaxChess:
                 ret_obj_l += x
             return ret_obj_l[0], ret_obj_l[1]
         for ret_obj in ret_obj_l:
-            if ret_obj[0] > best_value:
-                action = ret_obj[1]
-                best_value = ret_obj[0]
-
+            if(is_max_turn):
+                if ret_obj[0] > best_value:
+                    action = ret_obj[1]
+                    best_value = ret_obj[0]
+            else:
+                if ret_obj[0] < best_value:
+                    action = ret_obj[1]
+                    best_value = ret_obj[0]
         # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
         return best_value, str(action)
 

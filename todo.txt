@@ -5,3 +5,7 @@ trading down a pawn if the opponent is attacking with lesser pieces
 try and fix message printing delay
 
 fix fork process in discord driver for gamemode 3
+
+teach heuristic to pursue a checkmate
+
+fix minimax and make sure its calculating the lowest value when its blacks turn
