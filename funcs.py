@@ -6,6 +6,7 @@ import math
 import re
 import multiprocessing
 from itertools import starmap
+import itertools
 
 
 class MiniMaxChess:
@@ -21,17 +22,23 @@ class MiniMaxChess:
         self.pid = -1
 
     def makeMovePure(self, sanStr):
-        moveStr = str(self.board.parse_san(sanStr))
-        move = chess.Move.from_uci(moveStr)
+        try:
+            moveStr = str(self.board.parse_san(sanStr))
+            move = chess.Move.from_uci(moveStr)
+        except:
+            print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
         if(move in self.board.legal_moves):
             self.board .push(move)
         else:
             print("Move " + move + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-        print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
 
     def makeMoveHeur(self, sanStr):
-        moveStr = str(self.board.parse_san(sanStr))
-        move = chess.Move.from_uci(moveStr)
+        try:
+            moveStr = str(self.board.parse_san(sanStr))
+            move = chess.Move.from_uci(moveStr)
+        except:
+            print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
+            return -10000
         if(move in self.board.legal_moves):
             self.board .push(move)
             heur = self.heuristic()
@@ -39,20 +46,20 @@ class MiniMaxChess:
         else:
             print("Move " + move + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
             return -10000
-        print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-        return -10000
 
     def makeMove(self, sanStr):
-        moveStr = str(self.board.parse_san(sanStr))
-        move = chess.Move.from_uci(moveStr)
+        try:
+            moveStr = str(self.board.parse_san(sanStr))
+            move = chess.Move.from_uci(moveStr)
+        except:
+            print("Move not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
+            return 0
         if(move in self.board .legal_moves):
             self.board.push(move)
             return 1
         else:
             print("Move not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
             return 0
-        print("Move not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-        return 0
 
     def getMoveList(self):
         moveStrList = str(self.board.legal_moves)
@@ -428,7 +435,7 @@ class MiniMaxChess:
 
         start_time = time.time()
 
-        eval_score, action = self.minimax(self.getFen())
+        eval_score, action = self.minimax(self.getFen(),0,True,float('-inf'),float('inf'))
         returnStr = ("MINIMAX : Done, eval = %d\n" % (eval_score))
         returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
         returnStr += ("MINIMAX : Chosen move: %s" % action)
@@ -448,49 +455,63 @@ class MiniMaxChess:
         #     The evaluation or utility and the action key name
         # """
 
-        eval_score, action = self.minimax(self.getFen())
+        eval_score, action = self.minimax(self.getFen(), 0,True,float('-inf'),float('inf'))
         return action
 
     @staticmethod
-    def minimax(fen):
+    def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
-        MAX_PROCESSES = 1
+        MAX_PROCESSES = 32
 
         chessObj = MiniMaxChess(fen)
-
-        all_possible_moves = chessObj.getMoveList()
-        ret_obj_l = []
-        args = []
-
-        for a in all_possible_moves:
-            args += [(fen, 0, True, float('-inf'), float('inf'), [a], chessObj)]
-
-        with multiprocessing.Pool(MAX_PROCESSES) as pool:
-            ret_obj_l = pool.starmap(MiniMaxChess.helper, args)
-        
-        best_value = float('-inf')
-        action = ""
-        for a in ret_obj_l:
-            if a.best_value > best_value:
-                best_value = a.best_value
-                action = a.action
-        return best_value, str(action)
-
-    @staticmethod
-    def helper(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj):
-        if (current_depth == 3 or chessObj.board.is_game_over()):
+        if (current_depth == 4 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
+
+        possible_actions = chessObj.getMoveList()
         # print(possible_actions)
         random.shuffle(possible_actions) #randomness
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
-        for move_key in possible_actions:
 
+        args = []
+
+        if not is_fertile:
+            args = [(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj)]
+        else:
+            x = 0
+            if len(possible_actions) < MAX_PROCESSES:
+                MAX_PROCESSES = len(possible_actions)
+            while x < len(possible_actions):
+                args = args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:x + int(len(possible_actions)/MAX_PROCESSES)], chessObj)] if x + len(possible_actions)/MAX_PROCESSES < len(possible_actions) else args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:], chessObj)]
+                x += int(len(possible_actions) / MAX_PROCESSES)
+
+        ret_obj_l = []
+        if is_fertile:
+            with multiprocessing.Pool(MAX_PROCESSES) as pool:
+                ret_obj_l = pool.starmap(MiniMaxChess.minimax_helper, args)
+        else:
+            ret_obj_l2 = itertools.starmap(MiniMaxChess.minimax_helper, args)
+            for x in ret_obj_l2:
+                ret_obj_l += x
+            return ret_obj_l[0], ret_obj_l[1]
+        for ret_obj in ret_obj_l:
+            if ret_obj[0] > best_value:
+                action = ret_obj[1]
+                best_value = ret_obj[0]
+
+        # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
+        return best_value, str(action)
+
+    @staticmethod
+    def minimax_helper(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj):
+        best_value = float('-inf') if is_max_turn else float('inf')
+        action = ""
+        for move_key in possible_actions:
             chessObj.makeMovePure(str(move_key))
             # print(chessObj.board.fen())
             # chessObj.evalBoard()
 
-            eval_child, action_child = MiniMaxChess.helper(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, chessObj.getMoveList(), chessObj)
+            eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, False)
             
             chessObj.board.pop()
             if is_max_turn and best_value < eval_child:
@@ -506,12 +527,4 @@ class MiniMaxChess:
                 beta = min(beta, best_value)
                 if beta <= alpha:
                     break
-        # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
-        return best_value, str(action)
-
-class ret_obj:
-    best_value = 0
-    action = ""
-    def __init__(self, bv, act):
-        self.best_value = bv
-        self.action = act
+        return best_value, action
