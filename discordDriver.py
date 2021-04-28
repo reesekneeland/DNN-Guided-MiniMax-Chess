@@ -35,7 +35,7 @@ async def on_message(msg):
         if(cmd1 == "exit" or cmd1 == "quit"):
                 game.resetBoard()
                 game.setState == 0
-                os.system("killall screen")
+                # os.system("killall screen")
                 AIip == 0
         if(game.setState == 1):
             await msg.channel.send(game.setFen(cmd1))
@@ -62,7 +62,7 @@ async def on_message(msg):
                 await msg.channel.send(msg3)
                 await msg.channel.send(msg4)
             elif(cmd1 == "reset"):
-                os.system("killall screen")
+                # os.system("killall screen")
                 AIip == 0
                 game.gameState = 0
                 await msg.channel.send(game.resetBoard())
@@ -118,7 +118,13 @@ async def on_message(msg):
                 await msg.channel.send("You have chosen to watch the AI play itself!")
                 if(AIip == 0):
                     AIip == 1
-                    os.system('/home/shared/4511w/Guided-MiniMax-Chess/startDiscAI.sh {}' .format(str(discChannel)))
+                    # os.system('/home/shared/4511w/Guided-MiniMax-Chess/startDiscAI.sh {}' .format(str(discChannel)))
+                    pid = os.fork()
+                    discChannelStr = str(discChannel)
+                    if(pid == 0):
+                        os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
+                    else:
+                        pass
             else:
                 game.gameState = -1
                 await msg.channel.send("That is not a recognized gamemode! Please try again.")

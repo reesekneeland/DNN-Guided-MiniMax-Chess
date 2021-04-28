@@ -463,7 +463,7 @@ class MiniMaxChess:
     @staticmethod
     def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
-        MAX_PROCESSES = 20
+        MAX_PROCESSES = 24
 
         chessObj = MiniMaxChess(fen)
         if (current_depth == 3 or chessObj.board.is_game_over()):
