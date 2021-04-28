@@ -122,7 +122,7 @@ async def on_message(msg):
                     pid = os.fork()
                     discChannelStr = str(discChannel)
                     if(pid == 0):
-                        os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
+                        os.execvp("python3", ["python3 ", "discAI.py ", str(discChannel)])
                     else:
                         pass
             else:
