@@ -10,6 +10,7 @@ import multiprocessing
 load_dotenv()
 client = discord.Client()
 AIip = 0
+pid = -1
 game = MiniMaxChess(0)
      
 @client.event
@@ -19,6 +20,7 @@ async def on_ready():
 
 @client.event
 async def on_message(msg):
+    global pid
     if msg.author == client.user:
         return
     if '.chess' in msg.content.lower():
@@ -35,7 +37,8 @@ async def on_message(msg):
         if(cmd1 == "exit" or cmd1 == "quit"):
                 game.resetBoard()
                 game.setState == 0
-                # os.system("killall screen")
+                if(pid>0):
+                    os.kill(pid, signal.SIGKILL)
                 AIip == 0
         if(game.setState == 1):
             await msg.channel.send(game.setFen(cmd1))
@@ -62,7 +65,8 @@ async def on_message(msg):
                 await msg.channel.send(msg3)
                 await msg.channel.send(msg4)
             elif(cmd1 == "reset"):
-                # os.system("killall screen")
+                if(pid>0):
+                    os.kill(pid, signal.SIGKILL)
                 AIip == 0
                 game.gameState = 0
                 await msg.channel.send(game.resetBoard())
@@ -118,11 +122,13 @@ async def on_message(msg):
                 await msg.channel.send("You have chosen to watch the AI play itself!")
                 if(AIip == 0):
                     AIip == 1
+                    if(pid > 0):
+                        os.kill(pid, signal.SIGKILL)
                     # os.system('/home/shared/4511w/Guided-MiniMax-Chess/startDiscAI.sh {}' .format(str(discChannel)))
                     pid = os.fork()
                     discChannelStr = str(discChannel)
                     if(pid == 0):
-                        os.execvp("python3", ["python3 ", "discAI.py ", str(discChannel)])
+                        os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
                     else:
                         pass
             else:
