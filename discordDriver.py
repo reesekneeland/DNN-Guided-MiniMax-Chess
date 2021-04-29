@@ -25,7 +25,6 @@ async def on_message(msg):
         return
     if '.chess' in msg.content.lower():
         discChannel = msg.channel.id
-        # proc = multiprocessing.Process(target=gameMode3, args=([discChannel]))
         text = msg.content
         args = text.split(' ')
         try:
@@ -131,6 +130,21 @@ async def on_message(msg):
                         os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
                     else:
                         pass
+                msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                await msg.channel.send(msg1)
+                await msg.channel.send(msg2)
+                await msg.channel.send(msg3)
+                await msg.channel.send(msg4)
+                while(True):
+                    await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
+                    action = game.choose_action()
+                    await msg.channel.send(action)
+                    game.makeMovePure(game.choose_action_pure())
+                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+                    await msg.channel.send(msg1)
+                    await msg.channel.send(msg2)
+                    await msg.channel.send(msg3)
+                    await msg.channel.send(msg4)
             else:
                 game.gameState = -1
                 await msg.channel.send("That is not a recognized gamemode! Please try again.")
