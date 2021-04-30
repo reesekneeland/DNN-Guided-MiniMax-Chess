@@ -54,7 +54,7 @@ while(True):
             if(game.makeMove(raw_input) == 1):
                 game.evalBoard()
                 print("MINIMAX AB : Wait AI is choosing\n")
-                msg, action = game.choose_action()
+                action, msg = game.choose_action()
                 print(msg)
                 game.makeMove(action)
                 game.evalBoard()
@@ -80,7 +80,7 @@ while(True):
             game.evalBoard()
             while(game.gameOver() == False):
                 print("MINIMAX AB : Wait AI is choosing\n")
-                msg, action = game.choose_action()
+                action, msg = game.choose_action()
                 print(msg)
                 game.makeMove(action)
         else:
