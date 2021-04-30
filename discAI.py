@@ -22,19 +22,19 @@ async def on_ready():
     await channel.send(msg2)
     await channel.send(msg3)
     await channel.send(msg4)
-    while(True):
+    while(game.gameOver() == False):
         await channel.send("MINIMAX AB : Wait AI is choosing\n")
-        action = game.choose_action()
-        await channel.send(action)
-        game.makeMove(game.choose_action_pure())
+        action, minimaxmsg = game.choose_action()
+        await channel.send(minimaxmsg)
+        game.makeMove(action)
         msg1, msg2, msg3, msg4 = game.evalDiscBoard()
         await channel.send(msg1)
         await channel.send(msg2)
         await channel.send(msg3)
         await channel.send(msg4)
     print("loop exited")
-    time.sleep(30)
-    # sys.exit()
+    time.sleep(10)
+    sys.exit()
     
 
 TOKEN = os.getenv('DISCORD_TOKEN')
