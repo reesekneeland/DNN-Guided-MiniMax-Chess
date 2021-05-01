@@ -509,13 +509,10 @@ class MiniMaxChess:
         if (current_depth == 3 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
-        # print(possible_actions)
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
         for move_key in possible_actions:
             chessObj.makeMovePure(str(move_key))
-            # print(chessObj.board.fen())
-            # chessObj.evalBoard()
             eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
 
             chessObj.board.pop()
@@ -532,7 +529,6 @@ class MiniMaxChess:
                 beta = min(beta, best_value)
                 if beta <= alpha:
                     break
-        # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
         return best_value, str(action)
 
     # @staticmethod

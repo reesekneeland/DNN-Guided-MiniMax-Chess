@@ -74,6 +74,7 @@ async def on_message(msg):
                         os.kill(pid, signal.SIGKILL)
                     AIip == 0
                     game.gameState = 0
+                    game.resetBoard()
                     await msg.channel.send("Game has been reset")
                 elif(game.gameState == 1):
                     if(game.makeMove(cmd1) == 1):
