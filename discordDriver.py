@@ -9,10 +9,10 @@ import multiprocessing
 
 load_dotenv()
 client = discord.Client()
-AIip = 0
-pid = -1
-game = MiniMaxChess(0)
-     
+AIip_dict = {}
+pid_dict = {}
+game_dict = {}
+
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -20,11 +20,23 @@ async def on_ready():
 
 @client.event
 async def on_message(msg):
-    global pid
+    global pid_dict
+    global game_dict
+    global AIip_dict
     if msg.author == client.user:
         return
-    if '.chess' in msg.content.lower():
+    if msg.content.lower().startswith(".chess"):
         discChannel = msg.channel.id
+
+        if not (discChannel in game_dict):
+            game_dict[discChannel] = MiniMaxChess(0)
+            pid_dict[discChannel] = -1
+            AIip_dict[discChannel] = 0
+
+        AIip = AIip_dict[discChannel]
+        pid = pid_dict[discChannel]
+        game = game_dict[discChannel]
+
         text = msg.content
         cmd1 = text[7:]
         if(cmd1 == "help"):
@@ -72,7 +84,7 @@ async def on_message(msg):
                 elif(cmd1 == "reset"):
                     if(pid>0):
                         os.kill(pid, signal.SIGKILL)
-                    AIip == 0
+                    AIip = 0
                     game.gameState = 0
                     game.resetBoard()
                     await msg.channel.send("Game has been reset")
@@ -130,7 +142,7 @@ async def on_message(msg):
                     game.gameState = 3
                     await msg.channel.send("You have chosen to watch the AI play itself!")
                     if(AIip == 0):
-                        AIip == 1
+                        AIip = 1
                         if(pid > 0):
                             os.kill(pid, signal.SIGKILL)
                         pid = os.fork()
