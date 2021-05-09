@@ -30,38 +30,32 @@ async def on_ready():
     if(has_started):
         return
     has_started = True
-    try:
-        print('We have logged in as {0.user}'.format(client))
-        channel = client.get_channel(int(sys.argv[1]))
-        
-        msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+    print('We have logged in as {0.user}'.format(client))
+    channel = client.get_channel(int(sys.argv[1]))
+    
+    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
+    await channel.send(msg1)
+    await channel.send(msg2)
+    await channel.send(msg3)
+    await channel.send(msg4)
+
+    loop = asyncio.get_event_loop()
+    while(game.gameOver() == False):
+        await channel.send("MINIMAX AB : Wait AI is choosing\n")
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+        action, minimaxmsg = await loop.run_in_executor(executor, game.choose_action)
+        await channel.send(minimaxmsg)
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+        await loop.run_in_executor(executor, game.makeMove, action)
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+        msg1, msg2, msg3, msg4 = await loop.run_in_executor(executor, game.evalDiscBoard)
         await channel.send(msg1)
         await channel.send(msg2)
         await channel.send(msg3)
         await channel.send(msg4)
-        while(game.gameOver() == False):
-            await channel.send("MINIMAX AB : Wait AI is choosing\n")
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-            loop = asyncio.get_event_loop()
-            action, minimaxmsg = await loop.run_in_executor(executor, game.choose_action)
-            await channel.send(minimaxmsg)
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(executor, game.makeMove, action)
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-            loop = asyncio.get_event_loop()
-            msg1, msg2, msg3, msg4 = await loop.run_in_executor(executor, game.evalDiscBoard)
-            await channel.send(msg1)
-            await channel.send(msg2)
-            await channel.send(msg3)
-            await channel.send(msg4)
-        print("loop exited")
-        time.sleep(10)
-        sys.exit()
-    except Exception as exn:
-        print(exn)
-        print("Exit by exn")
-        exit(0)
+    print("loop exited")
+    time.sleep(10)
+    sys.exit()
 
 @client.event
 async def on_disconnect():

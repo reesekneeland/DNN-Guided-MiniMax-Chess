@@ -16,7 +16,6 @@ game_dict = {}
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
-    pid = -1
 
 @client.event
 async def on_message(msg):
@@ -28,11 +27,11 @@ async def on_message(msg):
     if msg.content.lower().startswith(".chess"):
         discChannel = msg.channel.id
 
+        #set the variables to data for this channel
         if not (discChannel in game_dict):
             game_dict[discChannel] = MiniMaxChess(0)
             pid_dict[discChannel] = -1
             AIip_dict[discChannel] = 0
-
         AIip = AIip_dict[discChannel]
         pid = pid_dict[discChannel]
         game = game_dict[discChannel]
@@ -40,18 +39,18 @@ async def on_message(msg):
         text = msg.content
         cmd1 = text[7:]
         if(cmd1 == "help"):
-            await msg.channel.send("Welcome to Guided MiniMax Chess! Here is a list of the available commands:\nTo begin a game from the gamemode selection screen, input the command```.chess <1, 2, or 3>```1 is for singleplayer, where you control both sides of the board (boring, this is mostly used for development), 2 is to play a singleplayer game against the AI opponent, and 3 is to watch the AI play itself! In this gamemode the AI will loop until it finishes the game unless you interrupt it with a quit command. In this state it will not respond to most of the other commands (yet)```.chess quit```Resets the game and exit back to the gamemode selection screen```.chess undo```Undoes the most recent move, in gamemode 2, it will undo both your move and the AI's move.```.chess get```Gets the current representation of the board in a string.```.chess set <board string here>``` sets the current board position to whatever string you give it.```.chess print``` prints the current board, useful if the bot messed up sending the message for the board and you need it reprinted.```.chess reset``` Resets the board back to the gamemode selection screen.\n\nTo actually interact with the board during play, use the command ```.chess <move>``` where the move is one of the strings of text given to you in the \"possible moves\" list it prints out every turn.\n\nIts worth noting that as of right now only one instance of the chess bot can be running at a time, so please interact with it one at a time to not disrupt each others games. If you have any more questions or a suggestion, shoot my developer, Reese Kneeland, a message!")
+            await msg.channel.send("Welcome to Guided MiniMax Chess! Here is a list of the available commands:\nTo begin a game from the gamemode selection screen, input the command```.chess <1, 2, or 3>```1 is for singleplayer, where you control both sides of the board (boring, this is mostly used for development), 2 is to play a singleplayer game against the AI opponent, and 3 is to watch the AI play itself! In this gamemode the AI will loop until it finishes the game unless you interrupt it with a quit command. In this state it will not respond to most of the other commands (yet)```.chess quit```Resets the game and exit back to the gamemode selection screen```.chess undo```Undoes the most recent move, in gamemode 2, it will undo both your move and the AI's move.```.chess get```Gets the current representation of the board in a string.```.chess set <board string here>``` sets the current board position to whatever string you give it.```.chess print``` prints the current board, useful if the bot messed up sending the message for the board and you need it reprinted.```.chess reset``` Resets the board back to the gamemode selection screen.\n\nTo actually interact with the board during play, use the command ```.chess <move>``` where the move is one of the strings of text given to you in the \"possible moves\" list it prints out every turn.\n\nIts worth noting that as of right now only one instance of the chess bot can be running at a time, so please interact with it one at a time to not disrupt each others games. If you have any more questions or a suggestion, shoot one of my developers, Reese Kneeland, a message!")
         else:
             if(game.gameState == 0):
                 await msg.channel.send("Welcome to Guided MiniMax Chess! Please enter the type of game you would like to play, 1 for singleplayer, 2 to play vs an AI, and 3 to have the AI play itself")
             if(game.gameState > 0):
                 if(cmd1 == "exit" or cmd1 == "quit" or cmd1 == "kill"):
                     game.resetBoard()
-                    game.gameState == 0
-                    if(pid>0):
+                    game.gameState = 0
+                    if(pid > 0):
                         os.kill(pid, signal.SIGKILL)
                     await msg.channel.send("Game has been stopped")
-                    AIip == 0
+                    AIip = 0
                 elif(cmd1 == "undo"):
                     if(game.gameState == 1):
                         await msg.channel.send(game.undoMove())
@@ -82,7 +81,7 @@ async def on_message(msg):
                     await msg.channel.send(msg3)
                     await msg.channel.send(msg4)
                 elif(cmd1 == "reset"):
-                    if(pid>0):
+                    if(pid > 0):
                         os.kill(pid, signal.SIGKILL)
                     AIip = 0
                     game.gameState = 0
@@ -146,7 +145,6 @@ async def on_message(msg):
                         if(pid > 0):
                             os.kill(pid, signal.SIGKILL)
                         pid = os.fork()
-                        discChannelStr = str(discChannel)
                         if(pid == 0):
                             os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
                         else:
@@ -154,6 +152,11 @@ async def on_message(msg):
                 else:
                     game.gameState = -1
                     await msg.channel.send("That is not a recognized gamemode! Please try again.")
+
+        #save everything to the dictionaries again (im not 100% sure this is needed)
+        AIip_dict[discChannel] = AIip
+        pid = pid_dict[discChannel]
+        game = game_dict[discChannel]
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 client.run(TOKEN)
