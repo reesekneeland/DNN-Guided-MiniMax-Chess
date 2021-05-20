@@ -504,7 +504,7 @@ class MiniMaxChess:
         return optimalList
 
     @staticmethod
-    def minimax(fen, current_depth, is_max_turn, alpha, beta):
+    def minimax2(fen, current_depth, is_max_turn, alpha, beta):
         chessObj = MiniMaxChess(fen)
         if (current_depth == 3 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
@@ -531,77 +531,77 @@ class MiniMaxChess:
                     break
         return best_value, str(action)
 
-    # @staticmethod
-    # def mulMinimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
+    @staticmethod
+    def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
-    #     MAX_PROCESSES = 24
+        MAX_PROCESSES = 32
 
-    #     chessObj = MiniMaxChess(fen)
-    #     if (current_depth == 3 or chessObj.board.is_game_over()):
-    #         return chessObj.heuristic(), ""
+        chessObj = MiniMaxChess(fen)
+        if (current_depth == 4 or chessObj.board.is_game_over()):
+            return chessObj.heuristic(), ""
 
-    #     possible_actions = chessObj.getMoveList()
-    #     # print(possible_actions)
-    #     random.shuffle(possible_actions) #randomness
-    #     best_value = float('-inf') if is_max_turn else float('inf')
-    #     action = ""
+        possible_actions = chessObj.getMoveList()
+        # print(possible_actions)
+        random.shuffle(possible_actions) #randomness
+        best_value = float('-inf') if is_max_turn else float('inf')
+        action = ""
 
-    #     args = []
+        args = []
 
-    #     if not is_fertile:
-    #         args = [(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj)]
-    #     else:
-    #         x = 0
-    #         if len(possible_actions) < MAX_PROCESSES:
-    #             MAX_PROCESSES = len(possible_actions)
-    #         while x < len(possible_actions):
-    #             args = args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:x + int(len(possible_actions)/MAX_PROCESSES)], chessObj)] if x + len(possible_actions)/MAX_PROCESSES < len(possible_actions) else args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:], chessObj)]
-    #             x += int(len(possible_actions) / MAX_PROCESSES)
+        if not is_fertile:
+            args = [(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj)]
+        else:
+            x = 0
+            if len(possible_actions) < MAX_PROCESSES:
+                MAX_PROCESSES = len(possible_actions)
+            while x < len(possible_actions):
+                args = args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:x + int(len(possible_actions)/MAX_PROCESSES)], chessObj)] if x + len(possible_actions)/MAX_PROCESSES < len(possible_actions) else args + [(fen, current_depth, is_max_turn, alpha, beta, possible_actions[x:], chessObj)]
+                x += int(len(possible_actions) / MAX_PROCESSES)
 
-    #     ret_obj_l = []
-    #     if is_fertile:
-    #         with multiprocessing.Pool(MAX_PROCESSES) as pool:
-    #             ret_obj_l = pool.starmap(MiniMaxChess.minimax_helper, args)
-    #     else:
-    #         ret_obj_l2 = itertools.starmap(MiniMaxChess.minimax_helper, args)
-    #         for x in ret_obj_l2:
-    #             ret_obj_l += x
-    #         return ret_obj_l[0], ret_obj_l[1]
-    #     for ret_obj in ret_obj_l:
-    #         if(is_max_turn):
-    #             if ret_obj[0] > best_value:
-    #                 action = ret_obj[1]
-    #                 best_value = ret_obj[0]
-    #         else:
-    #             if ret_obj[0] < best_value:
-    #                 action = ret_obj[1]
-    #                 best_value = ret_obj[0]
-    #     # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
-    #     return best_value, str(action)
+        ret_obj_l = []
+        if is_fertile:
+            with multiprocessing.Pool(MAX_PROCESSES) as pool:
+                ret_obj_l = pool.starmap(MiniMaxChess.minimax_helper, args)
+        else:
+            ret_obj_l2 = itertools.starmap(MiniMaxChess.minimax_helper, args)
+            for x in ret_obj_l2:
+                ret_obj_l += x
+            return ret_obj_l[0], ret_obj_l[1]
+        for ret_obj in ret_obj_l:
+            if(is_max_turn):
+                if ret_obj[0] > best_value:
+                    action = ret_obj[1]
+                    best_value = ret_obj[0]
+            else:
+                if ret_obj[0] < best_value:
+                    action = ret_obj[1]
+                    best_value = ret_obj[0]
+        # print("Depth: " + str(current_depth) + " My chosen action is: " + str(action) + " with score: " + str(best_value)) #debugging line
+        return best_value, str(action)
 
-    # @staticmethod
-    # def minimax_helper(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj):
-    #     best_value = float('-inf') if is_max_turn else float('inf')
-    #     action = ""
-    #     for move_key in possible_actions:
-    #         chessObj.makeMovePure(str(move_key))
-    #         # print(chessObj.board.fen())
-    #         # chessObj.evalBoard()
+    @staticmethod
+    def minimax_helper(fen, current_depth, is_max_turn, alpha, beta, possible_actions, chessObj):
+        best_value = float('-inf') if is_max_turn else float('inf')
+        action = ""
+        for move_key in possible_actions:
+            chessObj.makeMovePure(str(move_key))
+            # print(chessObj.board.fen())
+            # chessObj.evalBoard()
 
-    #         eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, False)
+            eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, False)
             
-    #         chessObj.board.pop()
-    #         if is_max_turn and best_value < eval_child:
-    #             best_value = eval_child
-    #             action = move_key
-    #             alpha = max(alpha, best_value)
-    #             if beta <= alpha:
-    #                 break
+            chessObj.board.pop()
+            if is_max_turn and best_value < eval_child:
+                best_value = eval_child
+                action = move_key
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break
 
-    #         elif (not is_max_turn) and best_value > eval_child:
-    #             best_value = eval_child
-    #             action = move_key
-    #             beta = min(beta, best_value)
-    #             if beta <= alpha:
-    #                 break
-    #     return best_value, action
+            elif (not is_max_turn) and best_value > eval_child:
+                best_value = eval_child
+                action = move_key
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break
+        return best_value, action
