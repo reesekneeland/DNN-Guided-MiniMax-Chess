@@ -24,7 +24,7 @@ async def on_message(msg):
     global AIip_dict
     if msg.author == client.user:
         return
-    if msg.content.lower().startswith(".chess"):
+    if msg.content.lower().startswith("!chess"):
         discChannel = msg.channel.id
 
         #set the variables to data for this channel

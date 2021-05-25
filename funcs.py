@@ -537,7 +537,7 @@ class MiniMaxChess:
         MAX_PROCESSES = 32
 
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 4 or chessObj.board.is_game_over()):
+        if (current_depth == 3 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
 
         possible_actions = chessObj.getMoveList()
