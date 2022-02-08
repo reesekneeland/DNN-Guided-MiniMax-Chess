@@ -1,5 +1,5 @@
 # Guided-MiniMax-Chess
-My chess algorithm uses an implementation of the MiniMax algorithm guided by a custom heuristic estimate to guide the agents decisions at each move, allowing it to play a competant game of chess against a user inside a Discord server enviornment.
+My chess algorithm uses an implementation of the MiniMax algorithm guided by a custom heuristic estimate to guide the agent’s decisions at each move, allowing it to play a competent game of chess against a user inside a Discord server environment.
 
 ![chess](https://user-images.githubusercontent.com/77468346/153057434-b374be29-a8b0-442e-a576-8701e2d05e08.gif)
 
