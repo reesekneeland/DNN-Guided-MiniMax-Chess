@@ -1,4 +1,5 @@
 # Guided-MiniMax-Chess
+My chess algorithm uses an implementation of the MiniMax algorithm guided by a custom heuristic estimate to guide the agents decisions at each move, allowing it to play a competant game of chess against a user inside a Discord server enviornment.
 ![chess](https://user-images.githubusercontent.com/77468346/153057434-b374be29-a8b0-442e-a576-8701e2d05e08.gif)
 
 
@@ -19,7 +20,7 @@ You can tell the program what move to make by typing in one of the provided opti
 
 
 ## MiniMax
-My chess algorithm uses an implementation of the MiniMax algorithm guided by a custom heuristic estimate to guide the agents decisions at each move. To calculate the next move we populate the MiniMax tree with the values of the heuristic of each move and determining the best possible move for each turn. The AI and heuristic algorithm is built on top of the python-chess module, which is already equipped with all of the functionality needed to run a fully functional chess board inside of the code. 
+My agent uses an implementation of the Minimax algorithm to make decisions about where to move and how to play out the game. To calculate the next move we populate the MiniMax tree with the values of the heuristic of each move and determining the best possible move for each turn. The AI and heuristic algorithm is built on top of the python-chess module, which is already equipped with all of the functionality needed to run a fully functional chess board inside of the code. 
 
 https://python-chess.readthedocs.io/en/latest/
 
