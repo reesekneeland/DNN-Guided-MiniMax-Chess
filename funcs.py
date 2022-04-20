@@ -1,6 +1,5 @@
 import chess
 import time
-import random
 from positionMap import *
 import math
 import re
@@ -18,6 +17,10 @@ class MiniMaxChess:
             self.board.set_fen(fen)
         except:
             self.board.set_fen(chess.STARTING_BOARD_FEN)
+        self.board.castling_rights |= chess.BB_A8
+        self.board.castling_rights |= chess.BB_A1
+        self.board.castling_rights |= chess.BB_H1
+        self.board.castling_rights |= chess.BB_H8
         self.gameState = 0
         self.initialzed = 0
         self.aiRecState = 0 #set to 2 to enable AI assist messages in singleplayer, 1 to disable, 0 to not use
@@ -57,6 +60,7 @@ class MiniMaxChess:
         
 
     def makeMove(self, sanStr):
+        print(self.board.castling_rights)
         try:
             moveStr = str(self.board.parse_san(sanStr))
             move = chess.Move.from_uci(moveStr)
@@ -654,7 +658,13 @@ class MiniMaxChess:
 def generateGameHeuristics(moveList):
     evalGame = MiniMaxChess(0)
     heurMoveList = []
-    for move in moveList:
-        heurMoveList.append((move, evalGame.makeMoveHeur(move)))
+    moveTuple = []
+    for i, move in enumerate(moveList):
+        moveTuple.append(move)
+        heur = evalGame.makeMoveHeur(move)
+        if(i%2 == 1):
+            moveTuple.append(heur)
+            heurMoveList.append(moveTuple)
+            moveTuple = []
 
     return heurMoveList

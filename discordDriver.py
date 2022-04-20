@@ -1,12 +1,9 @@
 import discord
 import os
-import chess
-import sys
 import time
 import signal
 from funcs import *
 from dotenv import load_dotenv
-import multiprocessing
 
 load_dotenv()
 client = discord.Client()
@@ -113,7 +110,7 @@ async def on_message(msg):
                         game.evalDiscBoard(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
-                        action, headerStr = game.choose_action()
+                        action, headerStr = game.choose_action(mode=0)
                         game.makeMove(action)
                         game.evalDiscBoard(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
@@ -157,15 +154,6 @@ async def on_message(msg):
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                         game.makeMove(action)
-                    # if(AIip == 0):
-                        # AIip = 1
-                        # if(pid > 0):
-                        #     os.kill(pid, signal.SIGKILL)
-                        # pid = os.fork()
-                        # if(pid == 0):
-                        #     os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
-                        # else:
-                        #     pass
                 else:
                     game.gameState = -1
                     await msg.channel.send("That is not a recognized gamemode! Please try again.")
