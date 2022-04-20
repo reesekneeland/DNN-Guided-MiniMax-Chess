@@ -20,6 +20,7 @@ class MiniMaxChess:
         self.gameState = 0
         self.initialzed = 0
         self.aiRecState = 0 #set to 2 to enable AI assist messages in singleplayer, 1 to disable, 0 to not use
+        self.AIstate = 0
         self.pid = -1
         self.msg_text_1 = ""
         self.msg_text_2 = ""
@@ -59,13 +60,11 @@ class MiniMaxChess:
             moveStr = str(self.board.parse_san(sanStr))
             move = chess.Move.from_uci(moveStr)
         except:
-            print("Move not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
             return 0
         if(move in self.board .legal_moves):
             self.board.push(move)
             return 1
         else:
-            print("Move not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
             return 0
 
     def getMoveList(self):
@@ -502,7 +501,7 @@ class MiniMaxChess:
                     returnStr = ("PLAYER1 : Your turn!\n")
                     returnStr += ("------------------\n")
                     returnStr += ("PLAYER2 : Done, chosen move = %s\n" % prevMove)
-        else:
+        elif(mode==2):
             if(self.getCurPlayer() == "black"):
                 returnStr = ("PLAYER1 : Done, chosen move = %s\n" % prevMove)
                 returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
@@ -516,6 +515,20 @@ class MiniMaxChess:
                     returnStr = ("PLAYER1 : Your turn! AI recommended move: %s\n" % action)
                     returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
                     returnStr += ("PLAYER2 : Done, chosen move = %s\n" % prevMove)
+        elif(mode==3):
+            if(self.getCurPlayer() == "black"):
+                returnStr = ("MINIMAX : Previous move = %s\n" % prevMove)
+                returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
+                returnStr += ("MINIMAX : Chosen move: %s\n" % action)
+            else:
+                if(init):
+                    returnStr = ("MINIMAX : Chosen move: %s\n" % action)
+                    returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
+                    returnStr += ("MINIMAX : Waiting...\n")
+                else:
+                    returnStr = ("MINIMAX : Chosen move: %s\n" % action)
+                    returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
+                    returnStr += ("MINIMAX : Previous move = %s\n" % prevMove)
         return action, returnStr
 
     def orderMoves(self, moveList):

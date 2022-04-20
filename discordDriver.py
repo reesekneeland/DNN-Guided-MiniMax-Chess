@@ -12,7 +12,6 @@ client = discord.Client()
 AIip_dict = {}
 pid_dict = {}
 game_dict = {}
-
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -57,10 +56,11 @@ async def on_message(msg):
                     
             if(game.gameState > 0):
                 if(cmd1 == "exit" or cmd1 == "quit" or cmd1 == "kill"):
+                    # game.AIstate = 0
                     game.resetBoard()
                     game.gameState = 0
-                    if(pid > 0):
-                        os.kill(pid, signal.SIGKILL)
+                    # if(pid > 0):
+                    #     os.kill(pid, signal.SIGKILL)
                     await msg.channel.send("Game has been stopped")
                     AIip = 0
                 elif(cmd1 == "undo"):
@@ -140,18 +140,31 @@ async def on_message(msg):
                     game.evalDiscBoard(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
-                # elif(cmd1 == "3"): 
-                #     game.gameState = 3
-                #     await msg.channel.send("You have chosen to watch the AI play itself!")
-                #     if(AIip == 0):
-                #         AIip = 1
-                #         if(pid > 0):
-                #             os.kill(pid, signal.SIGKILL)
-                #         pid = os.fork()
-                #         if(pid == 0):
-                #             os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
-                #         else:
-                #             pass
+                elif(cmd1 == "3"): 
+                    game.gameState = 3
+                    
+                    await msg.channel.send("You have chosen to watch the AI play itself!")
+                    action, headerStr = game.choose_action(mode=3, init=True)
+                    game.evalDiscBoard(headerStr)
+                    game.msg1 = await msg.channel.send(game.msg_text_1)
+                    game.msg2 = await msg.channel.send(game.msg_text_2)
+                    game.makeMove(action)
+                    prevMove = action
+                    while(game.gameOver() == False and game.gameState == 3):
+                        action, headerStr = game.choose_action(mode=3, prevMove=prevMove)
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
+                        game.makeMove(action)
+                    # if(AIip == 0):
+                        # AIip = 1
+                        # if(pid > 0):
+                        #     os.kill(pid, signal.SIGKILL)
+                        # pid = os.fork()
+                        # if(pid == 0):
+                        #     os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
+                        # else:
+                        #     pass
                 else:
                     game.gameState = -1
                     await msg.channel.send("That is not a recognized gamemode! Please try again.")
