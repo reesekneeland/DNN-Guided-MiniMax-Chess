@@ -4,6 +4,7 @@ import random
 from positionMap import *
 import math
 import re
+import numpy as np
 import multiprocessing
 from itertools import starmap
 import itertools
@@ -574,6 +575,7 @@ class MiniMaxChess:
                     break
         return best_value, str(action)
 
+    #MULTITHREADED MINIMAX, CURRENTLY NOT WORKING
     # @staticmethod
     # def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
@@ -647,4 +649,12 @@ class MiniMaxChess:
     #             beta = min(beta, best_value)
     #             if beta <= alpha:
     #                 break
-    #     return best_value, action
+    #     return best_value, action 
+
+def generateGameHeuristics(moveList):
+    evalGame = MiniMaxChess(0)
+    heurMoveList = []
+    for move in moveList:
+        heurMoveList.append((move, evalGame.makeMoveHeur(move)))
+
+    return heurMoveList
