@@ -12,7 +12,6 @@ client = discord.Client()
 AIip_dict = {}
 pid_dict = {}
 game_dict = {}
-
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -36,19 +35,32 @@ async def on_message(msg):
         pid = pid_dict[discChannel]
         game = game_dict[discChannel]
 
+        prevMove = ""
         text = msg.content
-        cmd1 = text[7:]
+        cmd1 = text[7:]       
         if(cmd1 == "help"):
             await msg.channel.send("Welcome to Guided MiniMax Chess! Here is a list of the available commands:\nTo begin a game from the gamemode selection screen, input the command```.chess <1, 2, or 3>```1 is for singleplayer, where you control both sides of the board (boring, this is mostly used for development), 2 is to play a singleplayer game against the AI opponent, and 3 is to watch the AI play itself! In this gamemode the AI will loop until it finishes the game unless you interrupt it with a quit command. In this state it will not respond to most of the other commands (yet)```.chess quit```Resets the game and exit back to the gamemode selection screen```.chess undo```Undoes the most recent move, in gamemode 2, it will undo both your move and the AI's move.```.chess get```Gets the current representation of the board in a string.```.chess set <board string here>``` sets the current board position to whatever string you give it.```.chess print``` prints the current board, useful if the bot messed up sending the message for the board and you need it reprinted.```.chess reset``` Resets the board back to the gamemode selection screen.\n\nTo actually interact with the board during play, use the command ```.chess <move>``` where the move is one of the strings of text given to you in the \"possible moves\" list it prints out every turn.\n\nIts worth noting that as of right now only one instance of the chess bot can be running at a time, so please interact with it one at a time to not disrupt each others games. If you have any more questions or a suggestion, shoot one of my developers, Reese Kneeland, a message!")
         else:
-            if(game.gameState == 0):
-                await msg.channel.send("Welcome to Guided MiniMax Chess! Please enter the type of game you would like to play, 1 for singleplayer, 2 to play vs an AI, and 3 to have the AI play itself")
+            if(game.initialzed == 0):
+                introMsg = ("Welcome to Guided MiniMax Chess!")
+                if(len(cmd1) == 0):
+                    introMsg += " Please enter the type of game you would like to play, 1 for singleplayer, 2 to play vs an AI, and 3 to have the AI play itself"
+                introMsg += "\n"
+                await msg.channel.send(introMsg)
+                game.initialzed = 1
+            else:
+                try:
+                    await msg.delete()
+                except discord.errors.Forbidden:
+                    print("Could not delete valid command message, invalid permissions!")
+                    
             if(game.gameState > 0):
                 if(cmd1 == "exit" or cmd1 == "quit" or cmd1 == "kill"):
+                    # game.AIstate = 0
                     game.resetBoard()
                     game.gameState = 0
-                    if(pid > 0):
-                        os.kill(pid, signal.SIGKILL)
+                    # if(pid > 0):
+                    #     os.kill(pid, signal.SIGKILL)
                     await msg.channel.send("Game has been stopped")
                     AIip = 0
                 elif(cmd1 == "undo"):
@@ -63,11 +75,9 @@ async def on_message(msg):
                     await msg.channel.send(game.getFen())
                 elif("set " in cmd1):
                     await msg.channel.send(game.setFen(text[11:]))
-                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                    await msg.channel.send(msg1)
-                    await msg.channel.send(msg2)
-                    await msg.channel.send(msg3)
-                    await msg.channel.send(msg4)
+                    game.evalDiscBoard()
+                    await game.msg1.edit(content=game.msg_text_1)
+                    await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "piecemap"):
                     await msg.channel.send(game.makeReadable(game.getBoardMap()))
                 elif(cmd1 == "alist"):
@@ -75,11 +85,9 @@ async def on_message(msg):
                 elif(cmd1 == "attacks"):
                     await msg.channel.send(game.getAttacks(26))
                 elif(cmd1 == "print"):
-                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                    await msg.channel.send(msg1)
-                    await msg.channel.send(msg2)
-                    await msg.channel.send(msg3)
-                    await msg.channel.send(msg4)
+                    game.evalDiscBoard()
+                    await game.msg1.edit(content=game.msg_text_1)
+                    await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "reset"):
                     if(pid > 0):
                         os.kill(pid, signal.SIGKILL)
@@ -89,66 +97,74 @@ async def on_message(msg):
                     await msg.channel.send("Game has been reset")
                 elif(game.gameState == 1):
                     if(game.makeMove(cmd1) == 1):
-                        msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                        await msg.channel.send(msg1)
-                        await msg.channel.send(msg2)
-                        await msg.channel.send(msg3)
-                        await msg.channel.send(msg4)
-                        await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
-                        action, minimaxmsg = game.choose_action()
-                        await msg.channel.send(minimaxmsg)
+                        prevMove = cmd1
+                        print(game.aiRecState)
+                        action, headerStr = game.choose_action(mode=game.aiRecState, prevMove=prevMove)
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
                     else:
                         await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
                 elif(game.gameState == 2):
                     if(game.makeMove(cmd1) == 1):
-                        msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                        await msg.channel.send(msg1)
-                        await msg.channel.send(msg2)
-                        await msg.channel.send(msg3)
-                        await msg.channel.send(msg4)
-                        await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
-                        action, minimaxmsg = game.choose_action()
-                        await msg.channel.send(minimaxmsg)
+                        prevMove = cmd1
+                        headerStr = ("MINIMAX AB: Wait, AI is choosing!\n------------------\nPLAYER: Chosen move: %s\n" % cmd1)
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
+                        action, headerStr = game.choose_action()
                         game.makeMove(action)
-                        msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                        await msg.channel.send(msg1)
-                        await msg.channel.send(msg2)
-                        await msg.channel.send(msg3)
-                        await msg.channel.send(msg4)
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
                     else:
                         await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
             elif(game.gameState <= 0):
-                if(cmd1 == "1"): 
+                if("1" in cmd1): 
                     game.gameState = 1
-                    await msg.channel.send("You have chosen singleplayer!")
-                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                    await msg.channel.send(msg1)
-                    await msg.channel.send(msg2)
-                    await msg.channel.send(msg3)
-                    await msg.channel.send(msg4)
-                    await msg.channel.send("MINIMAX AB : Wait AI is choosing\n")
-                    action, minimaxmsg = game.choose_action()
-                    await msg.channel.send(minimaxmsg)
-                elif(cmd1 == "2"): 
+                    if("AI" in cmd1): 
+                        game.aiRecState = 2
+                        await msg.channel.send("You have chosen AI assisted manual mode!")
+                        action, headerStr = game.choose_action(mode=1, init=True)
+                    else:
+                        game.aiRecState = 1
+                        await msg.channel.send("You have chosen manual mode!")
+                        action, headerStr = game.choose_action(mode=2, init=True)
+                    game.evalDiscBoard(headerStr)
+                    game.msg1 = await msg.channel.send(game.msg_text_1)
+                    game.msg2 = await msg.channel.send(game.msg_text_2)
+                elif("2" in cmd1): 
                     game.gameState = 2
                     await msg.channel.send("You have chosen to play against an AI!")
-                    msg1, msg2, msg3, msg4 = game.evalDiscBoard()
-                    await msg.channel.send(msg1)
-                    await msg.channel.send(msg2)
-                    await msg.channel.send(msg3)
-                    await msg.channel.send(msg4)
+                    headerStr = ("MINIMAX AB: Waiting...\n------------------\nPLAYER: Your turn!\n")
+                    game.evalDiscBoard(headerStr)
+                    game.msg1 = await msg.channel.send(game.msg_text_1)
+                    game.msg2 = await msg.channel.send(game.msg_text_2)
                 elif(cmd1 == "3"): 
                     game.gameState = 3
+                    
                     await msg.channel.send("You have chosen to watch the AI play itself!")
-                    if(AIip == 0):
-                        AIip = 1
-                        if(pid > 0):
-                            os.kill(pid, signal.SIGKILL)
-                        pid = os.fork()
-                        if(pid == 0):
-                            os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
-                        else:
-                            pass
+                    action, headerStr = game.choose_action(mode=3, init=True)
+                    game.evalDiscBoard(headerStr)
+                    game.msg1 = await msg.channel.send(game.msg_text_1)
+                    game.msg2 = await msg.channel.send(game.msg_text_2)
+                    game.makeMove(action)
+                    prevMove = action
+                    while(game.gameOver() == False and game.gameState == 3):
+                        action, headerStr = game.choose_action(mode=3, prevMove=prevMove)
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
+                        game.makeMove(action)
+                    # if(AIip == 0):
+                        # AIip = 1
+                        # if(pid > 0):
+                        #     os.kill(pid, signal.SIGKILL)
+                        # pid = os.fork()
+                        # if(pid == 0):
+                        #     os.execvp("python3", ["python3", "discAI.py", str(discChannel)])
+                        # else:
+                        #     pass
                 else:
                     game.gameState = -1
                     await msg.channel.send("That is not a recognized gamemode! Please try again.")
