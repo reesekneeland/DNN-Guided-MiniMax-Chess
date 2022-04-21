@@ -1,4 +1,5 @@
-whiteKnightMap = [
+import numpy as np
+KnightMap = [
 -50,-40,-30,-30,-30,-30,-40,-50,
 -40,-20,  0,  0,  0,  0,-20,-40,
 -30,  0, 10, 15, 15, 10,  0,-30,
@@ -8,11 +9,11 @@ whiteKnightMap = [
 -40,-20,  0,  5,  5,  0,-20,-40,
 -50,-40,-30,-30,-30,-30,-40,-50,
 ]
+wKnightMap = KnightMap
+bKnightMap = KnightMap[::-1]
 
-blackKnightMap = whiteKnightMap[::-1]
 
-
-whitePawnMap = [
+PawnMap = [
 0,  0,  0,  0,  0,  0,  0,  0,
 50, 50, 50, 50, 50, 50, 50, 50,
 10, 10, 20, 30, 30, 20, 10, 10,
@@ -23,9 +24,10 @@ whitePawnMap = [
  0,  0,  0,  0,  0,  0,  0,  0
 ]
 
-blackPawnMap = whitePawnMap[::-1]
+wPawnMap = PawnMap
+bPawnMap = PawnMap[::-1]
 
-whiteBishopMap = [
+BishopMap = [
 -20,-10,-10,-10,-10,-10,-10,-20,
 -10,  0,  0,  0,  0,  0,  0,-10,
 -10,  0,  5, 10, 10,  5,  0,-10,
@@ -35,9 +37,10 @@ whiteBishopMap = [
 -10,  5,  0,  0,  0,  0,  5,-10,
 -20,-10,-10,-10,-10,-10,-10,-20,
 ]
-blackBishopMap = whiteBishopMap[::-1]
+wBishopMap = BishopMap
+bBishopMap = BishopMap[::-1]
 
-whiteRookMap = [
+RookMap = [
   0,  0,  0,  0,  0,  0,  0,  0,
   5, 10, 10, 10, 10, 10, 10,  5,
  -5,  0,  0,  0,  0,  0,  0, -5,
@@ -48,9 +51,10 @@ whiteRookMap = [
   0,  -5,  0,  5,  5,  0,  -5,  0
   ]
 
-blackRookMap = whiteRookMap[::-1]
+wRookMap = RookMap
+bRookMap = RookMap[::-1]
 
-whiteQueenMap = [
+QueenMap = [
 -20,-10,-10, -5, -5,-10,-10,-20,
 -10,  0,  0,  0,  0,  0,  0,-10,
 -10,  0,  5,  5,  5,  5,  0,-10,
@@ -61,6 +65,6 @@ whiteQueenMap = [
 -20,-10,-10, -5, -5,-10,-10,-20
 ]
 
-blackQueenMap = whiteQueenMap[::-1]
-
+wQueenMap = QueenMap
+bQueenMap = QueenMap[::-1]
 
