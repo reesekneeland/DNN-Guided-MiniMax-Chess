@@ -666,5 +666,8 @@ def generateGameHeuristics(moveList):
             moveTuple.append(heur)
             heurMoveList.append(moveTuple)
             moveTuple = []
+        elif(i==len(moveList)-1):
+            moveTuple.append(heur)
+            heurMoveList.append(moveTuple)
 
     return heurMoveList
