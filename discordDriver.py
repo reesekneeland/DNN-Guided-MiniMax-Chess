@@ -80,7 +80,8 @@ async def on_message(msg):
                     await msg.channel.send(game.getFen())
                 elif("set " in cmd1):
                     await msg.channel.send(game.setFen(text[11:]))
-                    game.evalDiscBoard()
+                    headerStr = ("Game Loaded!\n------------------\nYour turn!\n")
+                    game.evalDiscBoard(headerStr)
                     await game.msg1.edit(content=game.msg_text_1)
                     await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "piecemap"):
@@ -130,11 +131,11 @@ async def on_message(msg):
                     if("AI" in cmd1): 
                         game.aiRecState = 2
                         await msg.channel.send("You have chosen AI assisted manual mode!")
-                        action, headerStr = game.choose_action(mode=1, init=True)
+                        action, headerStr = game.choose_action(mode=2, init=True)
                     else:
                         game.aiRecState = 1
                         await msg.channel.send("You have chosen manual mode!")
-                        action, headerStr = game.choose_action(mode=2, init=True)
+                        action, headerStr = game.choose_action(mode=1, init=True)
                     game.evalDiscBoard(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)

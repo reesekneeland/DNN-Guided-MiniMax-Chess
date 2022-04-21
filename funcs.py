@@ -166,7 +166,6 @@ class MiniMaxChess:
         attackMod = 0
         isAttackedWhite = False
         isAttackedBlack = True
-        color = self.board.color_at(square)
         boardStrW = str(self.board.attackers(chess.WHITE, self.convertCoordinates(square)))
         boardStrW = boardStrW.replace(".", "0")
         boardListW = re.split(' |\n', boardStrW)
@@ -185,7 +184,6 @@ class MiniMaxChess:
         attackMod = 0
         isAttackedWhite = False
         isAttackedBlack = True
-        color = self.board.color_at(square)
         boardStrB = str(self.board.attackers(chess.BLACK, self.convertCoordinates(square)))
         boardStrB = boardStrB.replace(".", "0")
         boardListB = re.split(' |\n', boardStrB)
@@ -204,37 +202,43 @@ class MiniMaxChess:
         attackMap = pieceMap
         print("piece\n", self.makeReadable(pieceMap))
         for i, square in enumerate(pieceMap):
+            # if(self.board.piece_type_at(self.convertCoordinates(i))):
+            # else:
+            #     print(i, square, 0, self.getWhiteAttackers(i))
             if(square != 0):
                 whiteAttacks = self.getWhiteAttackers(i)
                 blackAttacks = self.getBlackAttackers(i)
                 attackVal = whiteAttacks - blackAttacks
                 if(whiteAttacks>0 and blackAttacks>0):
-                    if(not self.board.color_at(i)):
+                    # print("CUR COLOR", self.board.color_at(self.convertCoordinates(i)))
+                    if(not self.board.color_at(self.convertCoordinates(i))):
+                        # print("CURRENT VALUE HANDLED")
                         attackVal -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                        
+                    #NOT SURE IF THIS NEEDS TO BE ENABLED    
                     # else:
                     #     attackVal -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
                 elif(whiteAttacks>0 or blackAttacks>0):
-                    attackVal = attackVal/10
+                    if(not self.board.color_at(self.convertCoordinates(i))):
+                        attackVal = -5
+                    else:
+                        attackVal = 5
                 if(square > 0):
                     pieceVal = self.getPieceValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                    applied = pieceVal + attackVal
-                    if(applied<0):
-                        attackMap[i] = pieceVal/5
-                    elif(applied > (2*pieceVal)):
-                        attackMap[i] = 2*pieceVal
+                    if(attackVal<0):
+                        attackMap[i] = pieceVal/10
+                    elif(attackVal > (square + 5)):
+                        attackMap[i] = square + 5
                     else:
                         attackMap[i] += attackVal
                 elif(square < 0):
                     pieceVal = -self.getPieceValue(self.board.piece_type_at(self.convertCoordinates(i)))
-
-                    applied = pieceVal - attackVal
-                    if(applied>0):
-                        attackMap[i] = pieceVal/5
-                    elif(applied < (2*pieceVal)):
-                        attackMap[i] = 2*pieceVal
+                    if(attackVal>0):
+                        attackMap[i] = pieceVal/10
+                    elif(attackVal < (square - 5)):
+                        attackMap[i] = square - 5
                     else:
                         attackMap[i] += attackVal
+                # print(i, square, attackMap[i], chess.piece_name(self.board.piece_type_at(self.convertCoordinates(i))), self.getWhiteAttackers(i), self.getBlackAttackers(i), attackVal)
             # else:
             #     attackMap[i] += self.getAttackers(i) * 0.05
         print("attack\n",self.makeReadable(attackMap))
@@ -592,7 +596,7 @@ class MiniMaxChess:
     @staticmethod
     def minimax2(fen, current_depth, is_max_turn, alpha, beta):
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 3 or chessObj.board.is_game_over()):
+        if (current_depth == 4 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
         best_value = float('-inf') if is_max_turn else float('inf')
