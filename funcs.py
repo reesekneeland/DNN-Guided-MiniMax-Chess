@@ -131,10 +131,10 @@ class MiniMaxChess:
                 color = chess.BLACK
             if(i<5):
                 posList[i] = np.array((self.board.pieces(piece, color).mirror().tolist())).astype(int)
-                # whiteAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
+                whiteAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
             else:
                 posList[i] = -np.array((self.board.pieces(piece, color).mirror().tolist())).astype(int)
-                # blackAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
+                blackAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
             posList[i] = self.getPieceValue(piece) * posList[i]
             posList[i] = np.add(posList[i], self.positionMap[i], where=(posList[i]>0))
         
@@ -487,8 +487,8 @@ class MiniMaxChess:
             return 100
         # attackMap = valueMap
         p, w, b = self.getBoardMap()
-        # attackMap = self.getAttackerMap(p, w, b)
-        totalHeuristic = 83 * math.atan(sum(p)/1500)
+        attackMap = self.getAttackerMap(p, w, b)
+        totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
         if(self.board.is_check()):
             if(self.board.turn ==chess.WHITE):
                 totalHeuristic -=3
@@ -579,7 +579,7 @@ class MiniMaxChess:
     @staticmethod
     def minimax2(fen, current_depth, is_max_turn, alpha, beta):
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 4 or chessObj.board.is_game_over()):
+        if (current_depth == 3 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
         best_value = float('-inf') if is_max_turn else float('inf')
