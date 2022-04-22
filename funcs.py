@@ -3,6 +3,7 @@ import time
 from positionMap import *
 import math
 import re
+import sys
 import numpy as np
 import multiprocessing
 from itertools import starmap
@@ -21,6 +22,23 @@ class MiniMaxChess:
         self.board.castling_rights |= chess.BB_A1
         self.board.castling_rights |= chess.BB_H1
         self.board.castling_rights |= chess.BB_H8
+        self.positionMap = np.array([wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
+        self.whitePawnMap = np.array(wPawnMap)
+        self.whitePawnMap = np.array(wPawnMap)
+        self.blackPawnMap = np.array(bPawnMap)
+        self.whiteKnightMap = np.array(wKnightMap)
+        self.blackKnightMap = np.array(bKnightMap)
+        self.whiteBishopMap = np.array(wBishopMap)
+        self.blackBishopMap = np.array(bBishopMap)
+        self.whiteRookMap = np.array(wRookMap)
+        self.blackRookMap = np.array(bRookMap)
+        self.whiteQueenMap = np.array(wQueenMap)
+        self.blackQueenMap = np.array(bQueenMap)
+        self.boardMap = np.zeros(64)
+        self.whiteAttackValMap = np.zeros(64)
+        self.blackAttackValMap = np.zeros(64)
+        self.whitePieceValMap = np.zeros(64)
+        self.blackPieceValMap = np.zeros(64)
         self.gameState = 0
         self.initialzed = 0
         self.aiRecState = 0 #set to 2 to enable AI assist messages in singleplayer, 1 to disable, 0 to not use
@@ -31,36 +49,16 @@ class MiniMaxChess:
         self.msg1 = None
         self.msg2 = None
 
-    def makeMovePure(self, sanStr):
-        try:
-            moveStr = str(self.board.parse_san(sanStr))
-            move = chess.Move.from_uci(moveStr)
-            if(move in self.board.legal_moves):
-                self.board .push(move)
-            else:
-                print("Move " + move + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-        except:
-            print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-
-
     def makeMoveHeur(self, sanStr):
-        try:
-            moveStr = str(self.board.parse_san(sanStr))
-            move = chess.Move.from_uci(moveStr)
-            if(move in self.board.legal_moves):
-                self.board .push(move)
-                heur = self.heuristic()
-                return heur
-            else:
-                print("Move " + move + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
-                return -10000
-        except:
-            print("Move " + sanStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
+        moveStr = str(self.board.parse_san(sanStr))
+        if(self.makeMove(sanStr)):
+            return self.heuristic()
+        else:
+            print("Move " + moveStr + " not legal, try again. The legal moves for " + self.getCurPlayer() + " are : " + str(self.getMoveList()))
             return -10000
         
 
     def makeMove(self, sanStr):
-        print(self.board.castling_rights)
         try:
             moveStr = str(self.board.parse_san(sanStr))
             move = chess.Move.from_uci(moveStr)
@@ -96,114 +94,132 @@ class MiniMaxChess:
 
     def setFen(self, fen):
         self.board.set_fen(fen)
-        return("Board has been set to: " + fen)
-
-    def getMultiplierMap(self, piece, color):
-        if(color == chess.BLACK):
-            if(piece == chess.PAWN):
-                return blackPawnMap
-            elif(piece == chess.KNIGHT):
-                return blackKnightMap
-            elif(piece == chess.BISHOP):
-                return blackBishopMap
-            elif(piece == chess.ROOK):
-                return blackRookMap
-            elif(piece == chess.QUEEN):
-                return blackQueenMap
-        if(color == chess.WHITE):
-            if(piece == chess.PAWN):
-                return whitePawnMap
-            elif(piece == chess.KNIGHT):
-                return whiteKnightMap
-            elif(piece == chess.BISHOP):
-                return whiteBishopMap
-            elif(piece == chess.ROOK):
-                return whiteRookMap
-            elif(piece == chess.QUEEN):
-                return whiteQueenMap
+        return fen
 
     def getBoardMap(self):
-        whitePStr = str(self.board.pieces(chess.PAWN, chess.WHITE))
-        whitePStr.replace(".", "0.0")
-        whitePList = re.split(' |\n', whitePStr)
-        whiteBStr = str(self.board.pieces(chess.BISHOP, chess.WHITE))
-        whiteBStr.replace(".", "0.0")
-        whiteBList = re.split(' |\n', whiteBStr)
-        whiteKnStr = str(self.board.pieces(chess.KNIGHT, chess.WHITE))
-        whiteKnStr.replace(".", "0.0")
-        whiteKnList = re.split(' |\n', whiteKnStr)
-        whiteRStr = str(self.board.pieces(chess.ROOK, chess.WHITE))
-        whiteRStr.replace(".", "0.0")
-        whiteRList = re.split(' |\n', whiteRStr)
-        whiteQStr = str(self.board.pieces(chess.QUEEN, chess.WHITE))
-        whiteQStr.replace(".", "0.0")
-        whiteQList = re.split(' |\n', whiteQStr)
-        blackPStr = str(self.board.pieces(chess.PAWN, chess.BLACK))
-        blackPStr.replace(".", "0.0")
-        blackPList = re.split(' |\n', blackPStr)
-        blackBStr = str(self.board.pieces(chess.BISHOP, chess.BLACK))
-        blackBStr.replace(".", "0.0")
-        blackBList = re.split(' |\n', blackBStr)
-        blackKnStr = str(self.board.pieces(chess.KNIGHT, chess.BLACK))
-        blackKnStr.replace(".", "0.0")
-        blackKnList = re.split(' |\n', blackKnStr)
-        blackRStr = str(self.board.pieces(chess.ROOK, chess.BLACK))
-        blackRStr.replace(".", "0.0")
-        blackRList = re.split(' |\n', blackRStr)
-        blackQStr = str(self.board.pieces(chess.QUEEN, chess.BLACK))
-        blackQStr.replace(".", "0.0")
-        blackQList = re.split(' |\n', blackQStr)
-        pieceMap = []
-        for i in range(0, 64):
-            if(whitePList[i] == "1"):
-                appendVal = 1.0 * self.getMultiplierMap(chess.PAWN, chess.WHITE)[i]
-            elif(whiteBList[i] == "1"):
-                appendVal = 3.0 * self.getMultiplierMap(chess.BISHOP, chess.WHITE)[i]
-            elif(whiteKnList[i] == "1"):
-                appendVal = 3.0 * self.getMultiplierMap(chess.KNIGHT, chess.WHITE)[i]
-            elif(whiteQList[i] == "1"):
-                appendVal = 9.0 * self.getMultiplierMap(chess.QUEEN, chess.WHITE)[i]
-            elif(whiteRList[i] == "1"):
-                appendVal = 5.0 * self.getMultiplierMap(chess.ROOK, chess.WHITE)[i]
-            elif(blackPList[i] == "1"):
-                appendVal = -1.0 * self.getMultiplierMap(chess.PAWN, chess.BLACK)[i]
-            elif(blackBList[i] == "1"):
-                appendVal = -3.0 * self.getMultiplierMap(chess.BISHOP, chess.BLACK)[i]
-            elif(blackKnList[i] == "1"):
-                appendVal = -3.0 * self.getMultiplierMap(chess.KNIGHT, chess.BLACK)[i]
-            elif(blackQList[i] == "1"):
-                appendVal = -9.0 * self.getMultiplierMap(chess.QUEEN, chess.BLACK)[i]
-            elif(blackRList[i] == "1"):
-                appendVal = -5.0 * self.getMultiplierMap(chess.ROOK, chess.BLACK)[i]
+        color = chess.WHITE
+        whiteAttackValMap = np.zeros(64)
+        blackAttackValMap = np.zeros(64)
+        posList = np.zeros((10, 64)).astype(int)
+        for i in range(len(posList)):
+            piece = i%5+1
+            if(i==5):
+                color = chess.BLACK
+            if(i<5):
+                posList[i] = np.array((self.board.pieces(piece, color).mirror().tolist())).astype(int)
+                whiteAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
             else:
-                appendVal = 0.0
-            pieceMap.append(round(appendVal, 2))
-        res_list = []
-        attackMap = self.getAttackerMap()
-        for i in range(0, len(pieceMap)):
-            if(pieceMap[i] > 0 and attackMap[i] < 0):
-                attacks = self.getAttacks(self.convertCoordinates(i))
-                attackMap = self.listSub(attackMap, attacks)
-            if(pieceMap[i] < 0 and attackMap[i] > 0):
-                attacks = self.getAttacks(self.convertCoordinates(i))
-                attackMap = self.listAdd(attackMap, attacks)
-        for i in range(0, len(pieceMap)):
-            if(pieceMap[i] > 0):
-                if(attackMap[i] >= 0):
-                    attackFactor = 1.0 + attackMap[i]/5
-                else:
-                    attackFactor = 0.1
-            elif(pieceMap[i] < 0):
-                if(attackMap[i] <= 0):
-                    attackFactor = 1.0 + attackMap[i]/-5
-                else:
-                    attackFactor = 0.1
-            else:
-                attackFactor = 1.0
+                posList[i] = -np.array((self.board.pieces(piece, color).mirror().tolist())).astype(int)
+                blackAttackValMap += self.getAttackValue(piece) * posList[i].astype(int)
+            posList[i] = self.getPieceValue(piece) * posList[i]
+            posList[i] = np.add(posList[i], self.positionMap[i], where=(posList[i]>0))
+        
+        pieceMap = np.sum(posList, axis=0)
+        # self.boardMap = pieceMap
+        return pieceMap, whiteAttackValMap, blackAttackValMap
 
-            res_list.append(round(pieceMap[i] * attackFactor, 2))
-        return res_list
-            
+    def getPieceMap(self):
+        boardList = str(self.board)
+        # print(boardList)
+        pieceMap = np.zeros(64).astype(int)
+        attackMap = np.zeros(64).astype(int)
+        attackTracker = np.zeros((2,64)).astype(int)
+        i=0
+        #[wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
+        for x in boardList:
+            if x == ".":
+                pieceMap[i] = 0
+            elif x == "r":
+                pieceMap[i] = -500 - self.positionMap[8][i]
+                #DO THIS FOR ALL IF STATEMENTS
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.ROOK) * map
+                attackTracker[1] += map
+            elif x == "n":
+                pieceMap[i] = -320 - self.positionMap[6][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.KNIGHT)* map
+                attackTracker[1] += map
+            elif x == "p":
+                pieceMap[i] = -100 - self.positionMap[5][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.PAWN)* map
+                attackTracker[1] += map
+            elif x == "b":
+                pieceMap[i] = -330 - self.positionMap[7][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.BISHOP)* map
+                attackTracker[1] += map
+            elif x == "q":
+                pieceMap[i] = -900 - self.positionMap[9][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.QUEEN)* map
+                attackTracker[1] += map
+            elif x == "k":
+                pieceMap[i] = 0
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.KING)* map
+                attackTracker[1] += map
+            elif x == "R":
+                pieceMap[i] = 500 + self.positionMap[3][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.ROOK)* map
+                attackTracker[0] += map
+            elif x == "N":
+                pieceMap[i] = 320 + self.positionMap[1][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.KNIGHT)* map
+                attackTracker[0] += map
+            elif x == "P":
+                pieceMap[i] = 100 + self.positionMap[0][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.PAWN)* map
+                attackTracker[0] += map
+            elif x == "B":
+                pieceMap[i] = 330 + self.positionMap[2][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.BISHOP)* map
+                attackTracker[0] += map
+            elif x == "Q":
+                pieceMap[i] = 900 + self.positionMap[4][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.QUEEN)* map
+                attackTracker[0] += map
+            elif x == "K":
+                pieceMap[i] = 0
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.KING)* map
+                attackTracker[0] += map
+            else:
+                i-=1
+            i+=1
+        # print(self.makeReadable(pieceMap))
+        # print(self.makeReadable(attackMap))
+        # print(attackTracker)
+        return pieceMap, attackMap, attackTracker
+
+    def getAttackerMap(self, pieceMap, attackMap, attackTracker):
+        retMap = pieceMap
+        # print("piece\n", self.makeReadable(pieceMap))
+        for i, square in enumerate(pieceMap):
+            if(square != 0):
+                if(attackTracker[0][i]>0 and attackTracker[1][i]>0):
+                    print("CUR COLOR", self.board.color_at(self.convertCoordinates(i)))
+                    if(not self.board.color_at(self.convertCoordinates(i))):
+                        attackMap[i] -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i))) 
+                    else:
+                        attackMap[i] += self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
+                attackVal = attackMap[i]
+                if(attackVal!=0):
+                    if(square > 0):
+                        if(attackVal<0):
+                            retMap[i] = square/10
+                    elif(square < 0):
+                        if(attackVal>0):
+                            retMap[i] = square/10
+        print("attack\n",self.makeReadable(retMap))
+        return retMap
+
     def listSub(self, list1, list2):
         difference = []
         zip_object = zip(list1, list2)
@@ -215,53 +231,18 @@ class MiniMaxChess:
         difference = []
         zip_object = zip(list1, list2)
         for list1_i, list2_i in zip_object:
-            difference.append(list1_i+list2_i)
+            difference.append(int(list1_i)+int(list2_i))
         return difference
 
-    def getPieceMap(self, piece, color):
-        multiplierMap = self.getMultiplierMap(piece, color)
-        boardStr = str(self.board.pieces(piece, color))
-        boardStr.replace(".", "0.0")
-        boardList = re.split(' |\n', boardStr)
-        for x, value in enumerate(boardList):
-            if(value == "."):
-                boardList[x] = 0.0
-            if(value == "1"):
-                boardList[x] = 1.0 * self.getPieceValue(piece)
-
-        res_list = []
-        for i in range(0, len(boardList)):
-            if(self.getAttackers(i, color) >= 0):
-                attackFactor = 1.0 + self.getAttackers(i, color)/3
+    def listMerge(self, list1, list2):
+        difference = []
+        zip_object = zip(list1, list2)
+        for list1_i, list2_i in zip_object:
+            if(list1_i == "1" or list2_i=="1"):
+                difference.append("1")
             else:
-                attackFactor = 0.1
-            res_list.append(boardList[i] * multiplierMap[i] * attackFactor)
-        return res_list
-
-    def getAttackers(self, square, color):
-        if(color == chess.WHITE):
-            return len(self.board.attackers(chess.BLACK, square)) - len(self.board.attackers(chess.WHITE, square))
-        elif(color == chess.BLACK):
-            return len(self.board.attackers(chess.WHITE, square)) - len(self.board.attackers(chess.BLACK, square))
-
-    def getAttacks(self, square):
-        boardStr = str(self.board.attacks(square))
-        boardStr.replace(".", "0")
-        boardList = re.split(' |\n', boardStr)
-        for x, value in enumerate(boardList):
-            if(value == "."):
-                boardList[x] = 0
-            if(value == "1"):
-                boardList[x] = 1
-        return boardList
-
-    def getAttackerMap(self):
-        attackList = []
-        for x in range(0, 64):
-            attackList.append(-1000)
-        for i in range(0, 64):
-            attackList[self.convertCoordinates(i)] = self.getAttackers(i, chess.BLACK)
-        return attackList
+                difference.append(".")
+        return difference
 
     def makeReadable(self, llist):
         returnStr = ""
@@ -275,15 +256,30 @@ class MiniMaxChess:
 
     def getPieceValue(self, piece):
         if(piece == chess.PAWN):
-            return 1.0
+            return 100
         elif(piece == chess.KNIGHT):
-            return 3.0
+            return 320
         elif(piece == chess.BISHOP):
-            return 3.0
+            return 330
         elif(piece == chess.ROOK):
-            return 5.0
+            return 500
         elif(piece == chess.QUEEN):
-            return 9.0
+            return 900
+
+    def getAttackValue(self, piece):
+        if(piece == chess.PAWN):
+            return 900
+        elif(piece == chess.KNIGHT):
+            return 600
+        elif(piece == chess.BISHOP):
+            return 500
+        elif(piece == chess.ROOK):
+            return 200
+        elif(piece == chess.QUEEN):
+            return 100
+        elif(piece == chess.KING):
+            return 100
+
     def getBoard(self):
         return self.board
 
@@ -302,28 +298,10 @@ class MiniMaxChess:
     def undoMove(self):
         self.board.pop()
         print("Move undone")
-        return self.evalBoard()
 
     def resetBoard(self):
         self.board.reset()
         print("Board has been reset")
-
-
-    def whiteValue(self):
-        pawnv = len(self.board.pieces(chess.PAWN, chess.WHITE))
-        knightv = 3 * len(self.board.pieces(chess.KNIGHT, chess.WHITE))
-        bishopv = 3 * len(self.board.pieces(chess.BISHOP, chess.WHITE))
-        rookv = 5 * len(self.board.pieces(chess.ROOK, chess.WHITE))
-        queenv = 9 * len(self.board.pieces(chess.QUEEN, chess.WHITE))
-        return pawnv + knightv + bishopv + rookv + queenv
-
-    def blackValue(self):
-        pawnv = len(self.board.pieces(chess.PAWN, chess.BLACK))
-        knightv = 3 * len(self.board.pieces(chess.KNIGHT, chess.BLACK))
-        bishopv = 3 * len(self.board.pieces(chess.BISHOP, chess.BLACK))
-        rookv = 5 * len(self.board.pieces(chess.ROOK, chess.BLACK))
-        queenv = 9 * len(self.board.pieces(chess.QUEEN, chess.BLACK))
-        return pawnv + knightv + bishopv + rookv + queenv
 
     def gameOver(self):
         return self.board.is_game_over()
@@ -419,15 +397,8 @@ class MiniMaxChess:
                     eStr += ("<:wlk:835909517635485757>")
             else:
                 count -= 1
-            
-            # if(count == 27):
-            #     eStr2 = eStr
-            #     eStr = ""
-            # if(count == 54):
-            #     eStr3 = eStr
-            #     eStr = ""
+
         eStr += ("\n:black_large_square::regional_indicator_a::regional_indicator_b::regional_indicator_c::regional_indicator_d::regional_indicator_e::regional_indicator_f::regional_indicator_g::regional_indicator_h:")
-        # return eStr2, eStr3, eStr
         return eStr
 
     def evalDiscBoard(self, headerMsg):
@@ -470,11 +441,16 @@ class MiniMaxChess:
             return -100
         elif(str(self.board.result()) == "1-0"):
             return 100
-        positionDif = sum(self.getBoardMap())
-        pointDif = self.whiteValue() - self.blackValue()
-        positionHeuristic = 83 * math.atan(positionDif/15)
-        valueHeuristic = 83 * math.atan(pointDif/15)
-        totalHeuristic = 0.8 * valueHeuristic + 0.2 * positionHeuristic
+        # attackMap = valueMap
+        p, a, t = self.getPieceMap()
+        # p, w = self.getBoardMap()
+        attackMap = self.getAttackerMap(p, a, t)
+        totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
+        if(self.board.is_check()):
+            if(self.board.turn ==chess.WHITE):
+                totalHeuristic -=3
+            else:
+                totalHeuristic +=3 
         return round(totalHeuristic, 2)
 
     def choose_action(self, mode=0, init=False, prevMove=""): 
@@ -554,13 +530,13 @@ class MiniMaxChess:
     @staticmethod
     def minimax2(fen, current_depth, is_max_turn, alpha, beta):
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 3 or chessObj.board.is_game_over()):
+        if (current_depth == 4 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
         for move_key in possible_actions:
-            chessObj.makeMovePure(str(move_key))
+            ret = chessObj.makeMove(str(move_key))
             eval_child, action_child = MiniMaxChess.minimax2(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
 
             chessObj.board.pop()
@@ -633,7 +609,7 @@ class MiniMaxChess:
     #     best_value = float('-inf') if is_max_turn else float('inf')
     #     action = ""
     #     for move_key in possible_actions:
-    #         chessObj.makeMovePure(str(move_key))
+    #         ret = chessObj.makeMove(str(move_key))
     #         # print(chessObj.board.fen())
     #         # chessObj.evalBoard()
 

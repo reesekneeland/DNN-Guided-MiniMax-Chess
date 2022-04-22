@@ -63,17 +63,25 @@ async def on_message(msg):
                     AIip = 0
                 elif(cmd1 == "undo"):
                     if(game.gameState == 1):
-                        await msg.channel.send(game.undoMove())
+                        game.undoMove()
+                        headerStr = ("Move undone!\n------------------\nPLAYER: Your Turn\n")
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
                     elif(game.gameState == 2):
                         game.undoMove()
-                        await msg.channel.send(game.undoMove())
+                        headerStr = ("MINIMAX: Move undone!\n------------------\nPLAYER: Your Turn\n")
+                        game.evalDiscBoard(headerStr)
+                        await game.msg1.edit(content=game.msg_text_1)
+                        await game.msg2.edit(content=game.msg_text_2)
                     else:
                         await msg.channel.send("Error, you are not in a gamemode that permits undoing moves")
                 elif(cmd1 == "get"):
                     await msg.channel.send(game.getFen())
                 elif("set " in cmd1):
                     await msg.channel.send(game.setFen(text[11:]))
-                    game.evalDiscBoard()
+                    headerStr = ("Game Loaded!\n------------------\nYour turn!\n")
+                    game.evalDiscBoard(headerStr)
                     await game.msg1.edit(content=game.msg_text_1)
                     await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "piecemap"):
@@ -102,7 +110,7 @@ async def on_message(msg):
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     else:
-                        await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
+                        await game.msg2.edit(content=(game.msg_text_2 + "\n\n**MOVE " + str(cmd1) + " NOT LEGAL, TRY AGAIN.**"))
                 elif(game.gameState == 2):
                     if(game.makeMove(cmd1) == 1):
                         prevMove = cmd1
@@ -116,18 +124,18 @@ async def on_message(msg):
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     else:
-                        await msg.channel.send("Move " + str(cmd1) + " not legal, try again. The legal moves for " + game.getCurPlayer() + " are : " + str(game.getMoveList()))
+                        await game.msg2.edit(content=(game.msg_text_2 + "\n\n**MOVE " + str(cmd1) + " NOT LEGAL, TRY AGAIN.**"))
             elif(game.gameState <= 0):
                 if("1" in cmd1): 
                     game.gameState = 1
                     if("AI" in cmd1): 
                         game.aiRecState = 2
                         await msg.channel.send("You have chosen AI assisted manual mode!")
-                        action, headerStr = game.choose_action(mode=1, init=True)
+                        action, headerStr = game.choose_action(mode=2, init=True)
                     else:
                         game.aiRecState = 1
                         await msg.channel.send("You have chosen manual mode!")
-                        action, headerStr = game.choose_action(mode=2, init=True)
+                        action, headerStr = game.choose_action(mode=1, init=True)
                     game.evalDiscBoard(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
@@ -138,22 +146,24 @@ async def on_message(msg):
                     game.evalDiscBoard(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
-                elif(cmd1 == "3"): 
+                elif("3" in cmd1): 
                     game.gameState = 3
                     
                     await msg.channel.send("You have chosen to watch the AI play itself!")
                     action, headerStr = game.choose_action(mode=3, init=True)
+                    game.makeMove(action)
                     game.evalDiscBoard(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
-                    game.makeMove(action)
                     prevMove = action
                     while(game.gameOver() == False and game.gameState == 3):
                         action, headerStr = game.choose_action(mode=3, prevMove=prevMove)
+                        print("Heuristic: ", game.heuristic)
+                        game.makeMove(action)
                         game.evalDiscBoard(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
-                        game.makeMove(action)
+                        
                 else:
                     game.gameState = -1
                     await msg.channel.send("That is not a recognized gamemode! Please try again.")
