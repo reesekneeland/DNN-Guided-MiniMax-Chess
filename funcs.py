@@ -94,31 +94,7 @@ class MiniMaxChess:
 
     def setFen(self, fen):
         self.board.set_fen(fen)
-        return("Board has been set to: " + fen)
-
-    def getPositionMap(self, piece, color):
-        if(color == chess.BLACK):
-            if(piece == chess.PAWN):
-                return blackPawnMap
-            elif(piece == chess.KNIGHT):
-                return blackKnightMap
-            elif(piece == chess.BISHOP):
-                return blackBishopMap
-            elif(piece == chess.ROOK):
-                return blackRookMap
-            elif(piece == chess.QUEEN):
-                return blackQueenMap
-        if(color == chess.WHITE):
-            if(piece == chess.PAWN):
-                return whitePawnMap
-            elif(piece == chess.KNIGHT):
-                return whiteKnightMap
-            elif(piece == chess.BISHOP):
-                return whiteBishopMap
-            elif(piece == chess.ROOK):
-                return whiteRookMap
-            elif(piece == chess.QUEEN):
-                return whiteQueenMap
+        return fen
 
     def getBoardMap(self):
         color = chess.WHITE
@@ -142,90 +118,107 @@ class MiniMaxChess:
         # self.boardMap = pieceMap
         return pieceMap, whiteAttackValMap, blackAttackValMap
 
-    def getWhiteAttackers(self, square, whiteAttackValMap):
-        attackMod = 0
-        isAttackedWhite = False
-        isAttackedBlack = True
-        boardListW = np.array((self.board.attackers(chess.WHITE, self.convertCoordinates(square)).mirror().tolist())).astype(int)
-        # boardStrW = str(self.board.attackers(chess.WHITE, self.convertCoordinates(square)))
-        # boardStrW = boardStrW.replace(".", "0")
-        # boardListW = np.array(list(map(int, re.split(' |\n', boardStrW))))
-        return np.sum(whiteAttackValMap * boardListW)
-        # for x, value in enumerate(boardListW):
-        #     # print(x, value)
-        #     if(value == "1"):
-        #         val = self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(x)))
-        #         if(val):
-        #             isAttackedWhite = True
-        #             attackMod += val
-        #         else:
-        #             attackMod += 0
-        # return attackMod
+    def getPieceMap(self):
+        boardList = str(self.board)
+        # print(boardList)
+        pieceMap = np.zeros(64).astype(int)
+        attackMap = np.zeros(64).astype(int)
+        attackTracker = np.zeros((2,64)).astype(int)
+        i=0
+        #[wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
+        for x in boardList:
+            if x == ".":
+                pieceMap[i] = 0
+            elif x == "r":
+                pieceMap[i] = -500 - self.positionMap[8][i]
+                #DO THIS FOR ALL IF STATEMENTS
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.ROOK) * map
+                attackTracker[1] += map
+            elif x == "n":
+                pieceMap[i] = -320 - self.positionMap[6][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.KNIGHT)* map
+                attackTracker[1] += map
+            elif x == "p":
+                pieceMap[i] = -100 - self.positionMap[5][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.PAWN)* map
+                attackTracker[1] += map
+            elif x == "b":
+                pieceMap[i] = -330 - self.positionMap[7][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.BISHOP)* map
+                attackTracker[1] += map
+            elif x == "q":
+                pieceMap[i] = -900 - self.positionMap[9][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.QUEEN)* map
+                attackTracker[1] += map
+            elif x == "k":
+                pieceMap[i] = 0
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap -= self.getAttackValue(chess.KING)* map
+                attackTracker[1] += map
+            elif x == "R":
+                pieceMap[i] = 500 + self.positionMap[3][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.ROOK)* map
+                attackTracker[0] += map
+            elif x == "N":
+                pieceMap[i] = 320 + self.positionMap[1][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.KNIGHT)* map
+                attackTracker[0] += map
+            elif x == "P":
+                pieceMap[i] = 100 + self.positionMap[0][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.PAWN)* map
+                attackTracker[0] += map
+            elif x == "B":
+                pieceMap[i] = 330 + self.positionMap[2][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.BISHOP)* map
+                attackTracker[0] += map
+            elif x == "Q":
+                pieceMap[i] = 900 + self.positionMap[4][i]
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.QUEEN)* map
+                attackTracker[0] += map
+            elif x == "K":
+                pieceMap[i] = 0
+                map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                attackMap += self.getAttackValue(chess.KING)* map
+                attackTracker[0] += map
+            else:
+                i-=1
+            i+=1
+        # print(self.makeReadable(pieceMap))
+        # print(self.makeReadable(attackMap))
+        # print(attackTracker)
+        return pieceMap, attackMap, attackTracker
 
-    def getBlackAttackers(self, square, blackAttackValMap):
-        attackMod = 0
-        isAttackedWhite = False
-        isAttackedBlack = True
-        boardStrB = str(self.board.attackers(chess.BLACK, self.convertCoordinates(square)))
-        boardStrB = boardStrB.replace(".", "0")
-        boardListB = np.array(list(map(int, re.split(' |\n', boardStrB))))
-        return np.sum(blackAttackValMap * boardListB)
-        # for x, value in enumerate(boardListB):
-        #     # print(x, value)
-        #     if(value == "1"):
-        #         val = self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(x)))
-        #         if(val):
-        #             isAttackedBlack = True
-        #             attackMod += val
-        #         else:
-        #             attackMod += 0
-        # return attackMod
-
-    def getAttackerMap(self, pieceMap, whiteAttackValMap, blackAttackValMap):
-        attackMap = pieceMap
+    def getAttackerMap(self, pieceMap, attackMap, attackTracker):
+        retMap = pieceMap
         # print("piece\n", self.makeReadable(pieceMap))
         for i, square in enumerate(pieceMap):
-            # if(self.board.piece_type_at(self.convertCoordinates(i))):
-            # else:
-            #     print(i, square, 0, self.getWhiteAttackers(i))
             if(square != 0):
-                whiteAttacks = self.getWhiteAttackers(i, whiteAttackValMap)
-                blackAttacks = self.getBlackAttackers(i, blackAttackValMap)
-                attackVal = whiteAttacks - blackAttacks
-                if(whiteAttacks>0 and blackAttacks>0):
-                    # print("CUR COLOR", self.board.color_at(self.convertCoordinates(i)))
+                if(attackTracker[0][i]>0 and attackTracker[1][i]>0):
+                    print("CUR COLOR", self.board.color_at(self.convertCoordinates(i)))
                     if(not self.board.color_at(self.convertCoordinates(i))):
-                        # print("CURRENT VALUE HANDLED")
-                        attackVal -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                    #NOT SURE IF THIS NEEDS TO BE ENABLED    
-                    # else:
-                    #     attackVal -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                elif(whiteAttacks>0 or blackAttacks>0):
-                    if(not self.board.color_at(self.convertCoordinates(i))):
-                        attackVal = -5
+                        attackMap[i] -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i))) 
                     else:
-                        attackVal = 5
-                if(square > 0):
-                    pieceVal = self.getPieceValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                    if(attackVal<0):
-                        attackMap[i] = pieceVal/10
-                    elif(attackVal > (square + 5)):
-                        attackMap[i] = square + 5
-                    else:
-                        attackMap[i] += attackVal
-                elif(square < 0):
-                    pieceVal = -self.getPieceValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                    if(attackVal>0):
-                        attackMap[i] = pieceVal/10
-                    elif(attackVal < (square - 5)):
-                        attackMap[i] = square - 5
-                    else:
-                        attackMap[i] += attackVal
-                # print(i, square, attackMap[i], chess.piece_name(self.board.piece_type_at(self.convertCoordinates(i))), self.getWhiteAttackers(i), self.getBlackAttackers(i), attackVal)
-            # else:
-            #     attackMap[i] += self.getAttackers(i) * 0.05
-        # print("attack\n",self.makeReadable(attackMap))
-        return attackMap
+                        attackMap[i] += self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
+                attackVal = attackMap[i]
+                if(attackVal!=0):
+                    if(square > 0):
+                        if(attackVal<0):
+                            retMap[i] = square/10
+                    elif(square < 0):
+                        if(attackVal>0):
+                            retMap[i] = square/10
+        print("attack\n",self.makeReadable(retMap))
+        return retMap
 
     def listSub(self, list1, list2):
         difference = []
@@ -250,26 +243,6 @@ class MiniMaxChess:
             else:
                 difference.append(".")
         return difference
-
-    # def getPieceMap(self, piece, color):
-    #     multiplierMap = self.getPositionMap(piece, color)
-    #     boardStr = str(self.board.pieces(piece, color))
-    #     boardStr.replace(".", "0.0")
-    #     boardList = re.split(' |\n', boardStr)
-    #     for x, value in enumerate(boardList):
-    #         if(value == "."):
-    #             boardList[x] = 0.0
-    #         if(value == "1"):
-    #             boardList[x] = 1.0 * self.getPieceValue(piece)
-
-    #     res_list = []
-    #     for i in range(0, len(boardList)):
-    #         if(self.getAttackers(i, color) >= 0):
-    #             attackFactor = 1.0 + self.getAttackers(i, color)/3
-    #         else:
-    #             attackFactor = 0.1
-    #         res_list.append(boardList[i] * multiplierMap[i] * attackFactor)
-    #     return res_list
 
     def makeReadable(self, llist):
         returnStr = ""
@@ -329,23 +302,6 @@ class MiniMaxChess:
     def resetBoard(self):
         self.board.reset()
         print("Board has been reset")
-
-
-    # def whiteValue(self):
-    #     pawnv = len(self.board.pieces(chess.PAWN, chess.WHITE))
-    #     knightv = 3 * len(self.board.pieces(chess.KNIGHT, chess.WHITE))
-    #     bishopv = 3 * len(self.board.pieces(chess.BISHOP, chess.WHITE))
-    #     rookv = 5 * len(self.board.pieces(chess.ROOK, chess.WHITE))
-    #     queenv = 9 * len(self.board.pieces(chess.QUEEN, chess.WHITE))
-    #     return pawnv + knightv + bishopv + rookv + queenv
-
-    # def blackValue(self):
-    #     pawnv = len(self.board.pieces(chess.PAWN, chess.BLACK))
-    #     knightv = 3 * len(self.board.pieces(chess.KNIGHT, chess.BLACK))
-    #     bishopv = 3 * len(self.board.pieces(chess.BISHOP, chess.BLACK))
-    #     rookv = 5 * len(self.board.pieces(chess.ROOK, chess.BLACK))
-    #     queenv = 9 * len(self.board.pieces(chess.QUEEN, chess.BLACK))
-    #     return pawnv + knightv + bishopv + rookv + queenv
 
     def gameOver(self):
         return self.board.is_game_over()
@@ -486,20 +442,15 @@ class MiniMaxChess:
         elif(str(self.board.result()) == "1-0"):
             return 100
         # attackMap = valueMap
-        p, w, b = self.getBoardMap()
-        attackMap = self.getAttackerMap(p, w, b)
+        p, a, t = self.getPieceMap()
+        # p, w = self.getBoardMap()
+        attackMap = self.getAttackerMap(p, a, t)
         totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
         if(self.board.is_check()):
             if(self.board.turn ==chess.WHITE):
                 totalHeuristic -=3
             else:
                 totalHeuristic +=3 
-        # positionDif = sum(self.getBoardMap())
-        # pointDif = self.whiteValue() - self.blackValue()
-        # positionHeuristic = 83 * math.atan(positionDif/15)
-        # attackHeuristic = self.attackHeuristic(self.getBoardMap())
-        # valueHeuristic = 83 * math.atan(pointDif/15)
-        # totalHeuristic = 0.8 * valueHeuristic + 0.2 * positionHeuristic
         return round(totalHeuristic, 2)
 
     def choose_action(self, mode=0, init=False, prevMove=""): 
@@ -579,7 +530,7 @@ class MiniMaxChess:
     @staticmethod
     def minimax2(fen, current_depth, is_max_turn, alpha, beta):
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 3 or chessObj.board.is_game_over()):
+        if (current_depth == 4 or chessObj.board.is_game_over()):
             return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
         best_value = float('-inf') if is_max_turn else float('inf')
