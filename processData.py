@@ -2,8 +2,17 @@ import chess
 from funcs import *
 import math
 import numpy as np
+import csv
 
-testGame = ["e4", "Nf6", "Nc3", "e5", "Nf3", "Nc6", "Bb5", "Bb4", "d3", "d6", "Bd2", "O-O", "Ng5", "h6", "h4", "Nd4", "Bc4", "hxg5", "hxg5", "Ne8", "Qh5", "Bh3", "Rxh3", "Nf3+", "gxf3", "g6", "Qh7#"]
+games=[]
+with open('data/2021_data.csv', newline='') as f:
+    reader = csv.reader(f)
+    for row in reader:
+        games.append(row)
+total_heurarray=[]
+count=0
+for game in games:
+    heurArray = generateGameHeuristics(game)
+    count+=1
+    total_heurarray.append(heurArray)
 
-heurArray = generateGameHeuristics(testGame)
-print(heurArray)
