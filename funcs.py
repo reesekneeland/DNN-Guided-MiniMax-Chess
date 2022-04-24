@@ -4,6 +4,7 @@ from positionMap import *
 import math
 import re
 import sys
+import random
 import numpy as np
 import multiprocessing
 from itertools import starmap
@@ -23,22 +24,12 @@ class MiniMaxChess:
         self.board.castling_rights |= chess.BB_H1
         self.board.castling_rights |= chess.BB_H8
         self.positionMap = np.array([wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
-        self.whitePawnMap = np.array(wPawnMap)
-        self.whitePawnMap = np.array(wPawnMap)
-        self.blackPawnMap = np.array(bPawnMap)
-        self.whiteKnightMap = np.array(wKnightMap)
-        self.blackKnightMap = np.array(bKnightMap)
-        self.whiteBishopMap = np.array(wBishopMap)
-        self.blackBishopMap = np.array(bBishopMap)
-        self.whiteRookMap = np.array(wRookMap)
-        self.blackRookMap = np.array(bRookMap)
-        self.whiteQueenMap = np.array(wQueenMap)
-        self.blackQueenMap = np.array(bQueenMap)
-        self.boardMap = np.zeros(64)
-        self.whiteAttackValMap = np.zeros(64)
-        self.blackAttackValMap = np.zeros(64)
-        self.whitePieceValMap = np.zeros(64)
-        self.blackPieceValMap = np.zeros(64)
+        self.hash = [[[random.randint(1,2**64 - 1) for i in range(12)]for j in range(8)]for k in range(8)]
+        self.hasBlackCastled = False
+        self.hasWhiteCastled = False
+        self.maxTime = 5
+        self.maxDepth = 3
+        self.hashMap = {}
         self.gameState = 0
         self.initialzed = 0
         self.aiRecState = 0 #set to 2 to enable AI assist messages in singleplayer, 1 to disable, 0 to not use
@@ -65,6 +56,27 @@ class MiniMaxChess:
         except:
             return 0
         if(move in self.board .legal_moves):
+            self.board.push(move)
+            return 1
+        else:
+            return 0
+
+    def makeMoveCastle(self, sanStr):
+        try:
+            moveStr = str(self.board.parse_san(sanStr))
+            move = chess.Move.from_uci(moveStr)
+        except:
+            return 0
+        if(move in self.board .legal_moves):
+            print("MOVE: ", move, self.board.is_castling(move))
+            if(self.board.is_castling(move)):
+                print("IS CASTLING")
+                if(self.board.turn == chess.WHITE):
+                    self.hasWhiteCastled = True
+                else:
+                    self.hasBlackCastled = True
+            print("WHITE", self.hasWhiteCastled)
+            print("BLACK", self.hasBlackCastled)
             self.board.push(move)
             return 1
         else:
@@ -115,7 +127,6 @@ class MiniMaxChess:
             posList[i] = np.add(posList[i], self.positionMap[i], where=(posList[i]>0))
         
         pieceMap = np.sum(posList, axis=0)
-        # self.boardMap = pieceMap
         return pieceMap, whiteAttackValMap, blackAttackValMap
 
     def getPieceMap(self):
@@ -123,6 +134,7 @@ class MiniMaxChess:
         # print(boardList)
         pieceMap = np.zeros(64).astype(int)
         attackMap = np.zeros(64).astype(int)
+        attackHash = {}
         attackTracker = np.zeros((2,64)).astype(int)
         i=0
         #[wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
@@ -204,11 +216,27 @@ class MiniMaxChess:
         for i, square in enumerate(pieceMap):
             if(square != 0):
                 if(attackTracker[0][i]>0 and attackTracker[1][i]>0):
-                    print("CUR COLOR", self.board.color_at(self.convertCoordinates(i)))
                     if(not self.board.color_at(self.convertCoordinates(i))):
                         attackMap[i] -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i))) 
-                    else:
-                        attackMap[i] += self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
+                    # else:
+                    #     attackMap[i] += self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
+                attackVal = attackMap[i]
+        curPiece=5
+        while(curPiece>0):
+            for i, square in enumerate(pieceMap):
+                iPiece = self.board.piece_type_at(self.convertCoordinates(i))
+                if(iPiece==curPiece):
+                    if(attackVal!=0):
+                        if(square > 0 and attackVal<0): 
+                            subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                            attackMap-= self.getAttackValue(iPiece) * subMap
+                        elif(square < 0 and attackVal>0): 
+                            subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                            attackMap+=(self.getAttackValue(iPiece) * subMap)
+            curPiece-=1
+                    
+        for i, square in enumerate(pieceMap):
+            if(square != 0):
                 attackVal = attackMap[i]
                 if(attackVal!=0):
                     if(square > 0):
@@ -217,8 +245,50 @@ class MiniMaxChess:
                     elif(square < 0):
                         if(attackVal>0):
                             retMap[i] = square/10
-        print("attack\n",self.makeReadable(retMap))
+
+        # print("attack\n",self.makeReadable(retMap))
         return retMap
+
+    def getIndex(self, piece):
+    # mapping each piece to a particular number
+        if (piece=='P'):
+            return 0
+        if (piece=='N'):
+            return 1
+        if (piece=='B'):
+            return 2
+        if (piece=='R'):
+            return 3
+        if (piece=='Q'):
+            return 4
+        if (piece=='K'):
+            return 5
+        if (piece=='p'):
+            return 6
+        if (piece=='n'):
+            return 7
+        if (piece=='b'):
+            return 8
+        if (piece=='r'):
+            return 9
+        if (piece=='q'):
+            return 10
+        if (piece=='k'):
+            return 11
+        else:
+            return -1
+
+    def computeHash(self, board):
+        h = 0
+        boardList = np.array(re.split(' |\n', str(board)))
+        boardList = boardList.reshape((-1,8))
+        for i in range(8):
+            for j in range(8):
+            # print board[i][j]
+                if boardList[i][j] != '-':
+                    piece = self.getIndex(boardList[i][j])
+                    h ^= self.hash[i][j][piece]
+        return h
 
     def listSub(self, list1, list2):
         difference = []
@@ -305,6 +375,18 @@ class MiniMaxChess:
 
     def gameOver(self):
         return self.board.is_game_over()
+    
+    def castleEval(self):
+        val = 0
+        if(self.board.has_castling_rights(chess.WHITE)==True):
+            val+=2
+        if(self.board.has_castling_rights(chess.BLACK)==True):
+            val-=2
+        if(self.hasWhiteCastled==True):
+            val+=10
+        if(self.hasBlackCastled==True):
+            val-=10
+        return val
 
     def emojiConvert(self):
         boardStr = str(self.board)
@@ -436,21 +518,22 @@ class MiniMaxChess:
         # print(self.emojiConvert())
         return returnStr
 
-    def heuristic(self):
+    def heuristic(self, move=""):
         if(str(self.board.result()) == "0-1"):
             return -100
         elif(str(self.board.result()) == "1-0"):
             return 100
-        # attackMap = valueMap
         p, a, t = self.getPieceMap()
-        # p, w = self.getBoardMap()
         attackMap = self.getAttackerMap(p, a, t)
         totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
+        totalHeuristic += self.castleEval()
+        print("castle eval", self.castleEval())
         if(self.board.is_check()):
             if(self.board.turn ==chess.WHITE):
                 totalHeuristic -=3
             else:
                 totalHeuristic +=3 
+        # self.hashMap[self.computeHash(self.board)] = round(totalHeuristic, 2)
         return round(totalHeuristic, 2)
 
     def choose_action(self, mode=0, init=False, prevMove=""): 
@@ -461,9 +544,9 @@ class MiniMaxChess:
         
         start_time = time.time()
         if(self.getCurPlayer() == "white"):
-            eval_score, action = self.minimax2(self.getFen(),0,True,float('-inf'),float('inf'))
+            eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
         else:
-            eval_score, action = self.minimax2(self.getFen(),0,False,float('-inf'),float('inf'))
+            eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
         if(mode==0):
             returnStr = ("MINIMAX : Done, chosen move = %s\n" % action)
             returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
@@ -528,18 +611,31 @@ class MiniMaxChess:
         return optimalList
 
     @staticmethod
-    def minimax2(fen, current_depth, is_max_turn, alpha, beta):
+    def minimax(self, fen, current_depth, is_max_turn, alpha, beta, startTime):
+        
         chessObj = MiniMaxChess(fen)
-        if (current_depth == 4 or chessObj.board.is_game_over()):
-            return chessObj.heuristic(), ""
         possible_actions = chessObj.orderMoves(chessObj.getMoveList())
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
+        move_evals = []
         for move_key in possible_actions:
             ret = chessObj.makeMove(str(move_key))
-            eval_child, action_child = MiniMaxChess.minimax2(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta)
-
+            boardHash = self.computeHash(chessObj.board)
+            if(boardHash in self.hashMap):
+                heur = self.hashMap[boardHash]
+            else:
+                heur = chessObj.heuristic()
+                self.hashMap[self.computeHash(chessObj.board)] = heur
+            move_evals.append([move_key, heur])
             chessObj.board.pop()
+        if(is_max_turn): 
+            move_evals = sorted(move_evals, key=lambda x: -x[1])
+        else:
+            move_evals = sorted(move_evals, key=lambda x: x[1])
+        for move_key, eval in move_evals:
+            if(time.time()- startTime > self.maxTime):
+                return best_value, str(action)
+            eval_child = MiniMaxChess.minimaxHelper(self, chessObj,current_depth+1,not is_max_turn, alpha, beta, str(move_key), eval, startTime)
             if is_max_turn and best_value < eval_child:
                 best_value = eval_child
                 action = move_key
@@ -553,11 +649,82 @@ class MiniMaxChess:
                 beta = min(beta, best_value)
                 if beta <= alpha:
                     break
+            
+        if(time.time()- startTime < self.maxTime):
+            print(time.time()- startTime)
+            self.maxDepth +=1
+            print("DEEPENING SEARCH TO DEPTH: ", self.maxDepth)
+            self.minimax(self, fen, current_depth, is_max_turn, alpha, beta, startTime)
+        self.maxDepth = 3
         return best_value, str(action)
+
+    def minimaxHelper(self, chessObj, current_depth, is_max_turn, alpha, beta, lastMove, heur, startTime):
+        if (current_depth == self.maxDepth or chessObj.board.is_game_over() or time.time()- startTime > self.maxTime):
+                return float(heur)
+        possible_actions = chessObj.orderMoves(chessObj.getMoveList())
+        best_value = float('-inf') if is_max_turn else float('inf')
+        action = ""
+        move_evals = []
+        for move_key in possible_actions:
+            ret = chessObj.makeMove(str(move_key))
+            boardHash = self.computeHash(chessObj.board)
+            if(boardHash in self.hashMap):
+                heur = self.hashMap[boardHash]
+            else:
+                heur = chessObj.heuristic()
+                self.hashMap[self.computeHash(chessObj.board)] = heur
+            move_evals.append([move_key, heur])
+            chessObj.board.pop()
+        if(is_max_turn): 
+            move_evals = np.array(sorted(move_evals, key=lambda x: -x[1]))
+            if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
+                idx = len(move_evals)
+                sign_detector = move_evals[:,1].astype(float)
+                valOne = sign_detector[0]
+                for i in range(len(sign_detector)-1):
+                    if(valOne * sign_detector[i+1] < 0):
+                        idx = i+1
+                        break
+                    elif(sign_detector[i] != 0):
+                        valOne = sign_detector[i]
+                move_evals = move_evals[0:idx]
+        else:
+            move_evals = np.array(sorted(move_evals, key=lambda x: x[1]))
+            if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
+                idx = len(move_evals)
+                sign_detector = move_evals[:,1].astype(float)
+                valOne = sign_detector[0]
+                for i in range(len(sign_detector)-1):
+                    if(valOne * sign_detector[i+1] < 0):
+                        idx = i+1
+                        break
+                    elif(sign_detector[i] != 0):
+                        valOne = sign_detector[i]
+                move_evals = move_evals[0:idx]
+        
+        for move_key, eval in move_evals:
+            if(time.time()- startTime > self.maxTime):
+                return best_value
+            eval_child = MiniMaxChess.minimaxHelper(self, chessObj,current_depth+1,not is_max_turn, alpha, beta, str(move_key), eval, startTime)
+            # print(eval_child)
+            if is_max_turn and best_value < eval_child:
+                best_value = eval_child
+                action = move_key
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break
+            
+            elif (not is_max_turn) and best_value > eval_child:
+                best_value = eval_child
+                action = move_key
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break
+        return best_value
 
     #MULTITHREADED MINIMAX, CURRENTLY NOT WORKING
     # @staticmethod
-    # def minimax(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
+    # def minimaxMulti(fen, current_depth, is_max_turn, alpha, beta, is_fertile = True):
 
     #     MAX_PROCESSES = 32
 
@@ -613,7 +780,7 @@ class MiniMaxChess:
     #         # print(chessObj.board.fen())
     #         # chessObj.evalBoard()
 
-    #         eval_child, action_child = MiniMaxChess.minimax(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, False)
+    #         eval_child, action_child = MiniMaxChess.minimaxMulti(str(chessObj.board.fen()),current_depth+1,not is_max_turn, alpha, beta, False)
             
     #         chessObj.board.pop()
     #         if is_max_turn and best_value < eval_child:
