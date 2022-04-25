@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+
 def nn_prediction(fen_map): #Assumption is input will be board representation in "bitmap" format of post all possible moves. Example: 9 legal moves
                               #Therefore array of 9 values passed in. Each value being a bitmap of he board after possible move is taken.
     model = torch.load('entire_model.pth') #Determine how we can load in the neural network model.
