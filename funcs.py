@@ -135,7 +135,21 @@ class MiniMaxChess:
         pieceMap = np.zeros(64).astype(int)
         attackMap = np.zeros(64).astype(int)
         attackHash = {}
-        attackTracker = np.zeros((2,64)).astype(int)
+        attackTracker = np.zeros((12,64)).astype(int)
+            #0 indicates how many white pieces are attacking the square
+            #11 indicates how many black pieces are attacking the squares
+            #1 indicates white pawns
+            #2 indicates white knights
+            #3 indicates white bishops
+            #4 indicates white rooks
+            #5 indicates white queens
+            #6 indicates black pawns
+            #7 indicates black knights
+            #8 indicates black bishops
+            #9 indicates black rooks
+            #10 indicates black queens
+            
+            #8
         i=0
         #[wPawnMap, wKnightMap, wBishopMap, wRookMap,wQueenMap, bPawnMap, bKnightMap, bBishopMap, bRookMap, bQueenMap])
         for x in boardList:
@@ -146,57 +160,67 @@ class MiniMaxChess:
                 #DO THIS FOR ALL IF STATEMENTS
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.ROOK) * map
-                attackTracker[1] += map
+                attackTracker[11] += map
+                attackTracker[9] += map
             elif x == "n":
                 pieceMap[i] = -320 - self.positionMap[6][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.KNIGHT)* map
-                attackTracker[1] += map
+                attackTracker[11] += map
+                attackTracker[7] += map
             elif x == "p":
                 pieceMap[i] = -100 - self.positionMap[5][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.PAWN)* map
-                attackTracker[1] += map
+                attackTracker[11] += map
+                attackTracker[6] += map
             elif x == "b":
                 pieceMap[i] = -330 - self.positionMap[7][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.BISHOP)* map
-                attackTracker[1] += map
+                attackTracker[11] += map
+                attackTracker[8] += map
             elif x == "q":
                 pieceMap[i] = -900 - self.positionMap[9][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.QUEEN)* map
-                attackTracker[1] += map
+                attackTracker[11] += map
+                attackTracker[10] += map
             elif x == "k":
                 pieceMap[i] = 0
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap -= self.getAttackValue(chess.KING)* map
-                attackTracker[1] += map
+                attackTracker[11] += map
             elif x == "R":
                 pieceMap[i] = 500 + self.positionMap[3][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap += self.getAttackValue(chess.ROOK)* map
                 attackTracker[0] += map
+                attackTracker[4] += map
             elif x == "N":
                 pieceMap[i] = 320 + self.positionMap[1][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap += self.getAttackValue(chess.KNIGHT)* map
                 attackTracker[0] += map
+                attackTracker[2] += map
             elif x == "P":
                 pieceMap[i] = 100 + self.positionMap[0][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap += self.getAttackValue(chess.PAWN)* map
                 attackTracker[0] += map
+                attackTracker[1] += map
             elif x == "B":
                 pieceMap[i] = 330 + self.positionMap[2][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap += self.getAttackValue(chess.BISHOP)* map
                 attackTracker[0] += map
+                attackTracker[3] += map
             elif x == "Q":
                 pieceMap[i] = 900 + self.positionMap[4][i]
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
                 attackMap += self.getAttackValue(chess.QUEEN)* map
                 attackTracker[0] += map
+                attackTracker[5] += map
             elif x == "K":
                 pieceMap[i] = 0
                 map = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
@@ -215,38 +239,63 @@ class MiniMaxChess:
         # print("piece\n", self.makeReadable(pieceMap))
         for i, square in enumerate(pieceMap):
             if(square != 0):
-                if(attackTracker[0][i]>0 and attackTracker[1][i]>0):
+                #check for attacks from weaker pieces
+                pieceType = self.board.piece_type_at(self.convertCoordinates(i))
+                curPiece=pieceType-1
+                while(curPiece>0):
+                    # print("attacktracker[curPiece]",curPiece, self.makeReadable(attackTracker[curPiece]))
+                    if(self.board.turn == chess.WHITE):
+                        # print("WHITE TURN, SQUARE: COLOR", self.convertCoordinates(i), self.board.color_at(self.convertCoordinates(i)))
+                        if(not self.board.color_at(self.convertCoordinates(i))): #square is black
+                            if(attackTracker[curPiece][i]>0):
+                                # print("MOD ACTIVATED", attackMap[i])
+                                attackMap[i] = 10000
+                                # print(attackMap[i])
+                    else:                                                   
+                        # print("BLACK TURN, SQUARE: COLOR", self.convertCoordinates(i), self.board.color_at(self.convertCoordinates(i)))     
+                        if(self.board.color_at(self.convertCoordinates(i))):
+                            if(attackTracker[curPiece+5][i]>0):
+                                # print("MOD ACTIVATED", attackMap[i])
+                                attackMap[i] = -10000
+                                # print(attackMap[i])
+                    curPiece -=1
+                #check if both players are attacking a square to give defender advantage
+                if(attackTracker[11][i]>0 and attackTracker[0][i]>0):
                     if(not self.board.color_at(self.convertCoordinates(i))):
-                        attackMap[i] -= self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i))) 
-                    # else:
-                    #     attackMap[i] += self.getAttackValue(self.board.piece_type_at(self.convertCoordinates(i)))
-                attackVal = attackMap[i]
+                        attackMap[i] -= self.getAttackValue(pieceType) 
+                    else:
+                        attackMap[i] += self.getAttackValue(pieceType)
+        #kamikaze prevention
         curPiece=5
         while(curPiece>0):
             for i, square in enumerate(pieceMap):
-                iPiece = self.board.piece_type_at(self.convertCoordinates(i))
-                if(iPiece==curPiece):
+                attackVal = attackMap[i]
+                pieceType = self.board.piece_type_at(self.convertCoordinates(i))
+                if(pieceType==curPiece):
                     if(attackVal!=0):
-                        if(square > 0 and attackVal<0): 
-                            subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
-                            attackMap-= self.getAttackValue(iPiece) * subMap
-                        elif(square < 0 and attackVal>0): 
-                            subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
-                            attackMap+=(self.getAttackValue(iPiece) * subMap)
+                        if(self.board.turn == chess.BLACK):
+                            if(square > 0 and attackVal<0): 
+                                subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                                attackMap-= self.getAttackValue(pieceType) * subMap
+                        else:
+                            if(square < 0 and attackVal>0): 
+                                subMap = np.array((self.board.attacks(self.convertCoordinates(i)).mirror().tolist())).astype(int)
+                                attackMap+=(self.getAttackValue(pieceType) * subMap)
             curPiece-=1
-                    
+        #devalue insecure pieces
         for i, square in enumerate(pieceMap):
             if(square != 0):
                 attackVal = attackMap[i]
                 if(attackVal!=0):
                     if(square > 0):
                         if(attackVal<0):
-                            retMap[i] = square/10
+                            retMap[i] = square/2
                     elif(square < 0):
                         if(attackVal>0):
-                            retMap[i] = square/10
+                            retMap[i] = square/2
 
-        # print("attack\n",self.makeReadable(retMap))
+        # print("attackMap\n",self.makeReadable(attackMap))
+        # print("retMap\n",self.makeReadable(retMap))
         return retMap
 
     def getIndex(self, piece):
@@ -527,12 +576,12 @@ class MiniMaxChess:
         attackMap = self.getAttackerMap(p, a, t)
         totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
         totalHeuristic += self.castleEval()
-        print("castle eval", self.castleEval())
-        if(self.board.is_check()):
-            if(self.board.turn ==chess.WHITE):
-                totalHeuristic -=3
-            else:
-                totalHeuristic +=3 
+        # print("castle eval", self.castleEval())
+        # if(self.board.is_check()):
+        #     if(self.board.turn ==chess.WHITE):
+        #         totalHeuristic -=3
+        #     else:
+        #         totalHeuristic +=3 
         # self.hashMap[self.computeHash(self.board)] = round(totalHeuristic, 2)
         return round(totalHeuristic, 2)
 
@@ -635,7 +684,9 @@ class MiniMaxChess:
         for move_key, eval in move_evals:
             if(time.time()- startTime > self.maxTime):
                 return best_value, str(action)
+            ret = chessObj.makeMove(str(move_key))
             eval_child = MiniMaxChess.minimaxHelper(self, chessObj,current_depth+1,not is_max_turn, alpha, beta, str(move_key), eval, startTime)
+            chessObj.board.pop()
             if is_max_turn and best_value < eval_child:
                 best_value = eval_child
                 action = move_key
@@ -675,37 +726,39 @@ class MiniMaxChess:
                 self.hashMap[self.computeHash(chessObj.board)] = heur
             move_evals.append([move_key, heur])
             chessObj.board.pop()
-        if(is_max_turn): 
-            move_evals = np.array(sorted(move_evals, key=lambda x: -x[1]))
-            if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
-                idx = len(move_evals)
-                sign_detector = move_evals[:,1].astype(float)
-                valOne = sign_detector[0]
-                for i in range(len(sign_detector)-1):
-                    if(valOne * sign_detector[i+1] < 0):
-                        idx = i+1
-                        break
-                    elif(sign_detector[i] != 0):
-                        valOne = sign_detector[i]
-                move_evals = move_evals[0:idx]
-        else:
-            move_evals = np.array(sorted(move_evals, key=lambda x: x[1]))
-            if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
-                idx = len(move_evals)
-                sign_detector = move_evals[:,1].astype(float)
-                valOne = sign_detector[0]
-                for i in range(len(sign_detector)-1):
-                    if(valOne * sign_detector[i+1] < 0):
-                        idx = i+1
-                        break
-                    elif(sign_detector[i] != 0):
-                        valOne = sign_detector[i]
-                move_evals = move_evals[0:idx]
+        # if(is_max_turn): 
+        #     move_evals = np.array(sorted(move_evals, key=lambda x: -x[1]))
+        #     if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
+        #         idx = len(move_evals)
+        #         sign_detector = move_evals[:,1].astype(float)
+        #         valOne = sign_detector[0]
+        #         for i in range(len(sign_detector)-1):
+        #             if(valOne * sign_detector[i+1] < 0):
+        #                 idx = i+1
+        #                 break
+        #             elif(sign_detector[i] != 0):
+        #                 valOne = sign_detector[i]
+        #         move_evals = move_evals[0:idx]
+        # else:
+        #     move_evals = np.array(sorted(move_evals, key=lambda x: x[1]))
+        #     if(float(min(move_evals[:,1])) < 0 < float(max(move_evals[:,1]))):
+        #         idx = len(move_evals)
+        #         sign_detector = move_evals[:,1].astype(float)
+        #         valOne = sign_detector[0]
+        #         for i in range(len(sign_detector)-1):
+        #             if(valOne * sign_detector[i+1] < 0):
+        #                 idx = i+1
+        #                 break
+        #             elif(sign_detector[i] != 0):
+        #                 valOne = sign_detector[i]
+        #         move_evals = move_evals[0:idx]
         
         for move_key, eval in move_evals:
             if(time.time()- startTime > self.maxTime):
                 return best_value
+            ret = chessObj.makeMove(str(move_key))
             eval_child = MiniMaxChess.minimaxHelper(self, chessObj,current_depth+1,not is_max_turn, alpha, beta, str(move_key), eval, startTime)
+            chessObj.board.pop()
             # print(eval_child)
             if is_max_turn and best_value < eval_child:
                 best_value = eval_child
