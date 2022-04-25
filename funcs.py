@@ -9,6 +9,7 @@ import numpy as np
 import multiprocessing
 from itertools import starmap
 import itertools
+import nn_prediction
 
 
 class MiniMaxChess:
@@ -676,6 +677,13 @@ class MiniMaxChess:
                 heur = chessObj.heuristic()
                 self.hashMap[self.computeHash(chessObj.board)] = heur
             move_evals.append([move_key, heur])
+            
+            #Pass in Fen representation of possible move
+            #neural_network_input = chessObj.board.fen()
+            
+            #Prediction of how much move will help or hinder player, currently prediction is within range [-15, 15]
+            #prediction = nn_prediction(neural_network_input)
+            
             chessObj.board.pop()
         if(is_max_turn): 
             move_evals = sorted(move_evals, key=lambda x: -x[1])
