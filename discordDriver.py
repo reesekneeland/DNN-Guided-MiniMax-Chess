@@ -65,13 +65,13 @@ async def on_message(msg):
                     if(game.gameState == 1):
                         game.undoMove()
                         headerStr = ("Move undone!\n------------------\nPLAYER: Your Turn\n")
-                        game.evalDiscBoard(headerStr)
+                        game.evalDiscBoardHeur(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     elif(game.gameState == 2):
                         game.undoMove()
                         headerStr = ("MINIMAX: Move undone!\n------------------\nPLAYER: Your Turn\n")
-                        game.evalDiscBoard(headerStr)
+                        game.evalDiscBoardHeur(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     else:
@@ -81,7 +81,7 @@ async def on_message(msg):
                 elif("set " in cmd1):
                     await msg.channel.send(game.setFen(text[11:]))
                     headerStr = ("Game Loaded!\n------------------\nYour turn!\n")
-                    game.evalDiscBoard(headerStr)
+                    game.evalDiscBoardHeur(headerStr)
                     await game.msg1.edit(content=game.msg_text_1)
                     await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "piecemap"):
@@ -91,7 +91,7 @@ async def on_message(msg):
                 elif(cmd1 == "attacks"):
                     await msg.channel.send(game.getAttacks(26))
                 elif(cmd1 == "print"):
-                    game.evalDiscBoard()
+                    game.evalDiscBoardHeur()
                     await game.msg1.edit(content=game.msg_text_1)
                     await game.msg2.edit(content=game.msg_text_2)
                 elif(cmd1 == "reset"):
@@ -106,7 +106,10 @@ async def on_message(msg):
                         prevMove = cmd1
                         print(game.aiRecState)
                         action, headerStr = game.choose_action(mode=game.aiRecState, prevMove=prevMove)
-                        game.evalDiscBoard(headerStr)
+                        if("AI" in cmd1): 
+                            game.evalDiscBoardHeur(headerStr)
+                        else:
+                            game.evalDiscBoard(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     else:
@@ -115,12 +118,12 @@ async def on_message(msg):
                     if(game.makeMoveCastle(cmd1) == 1):
                         prevMove = cmd1
                         headerStr = ("MINIMAX AB: Wait, AI is choosing!\n------------------\nPLAYER: Chosen move: %s\n" % cmd1)
-                        game.evalDiscBoard(headerStr)
+                        game.evalDiscBoardHeur(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                         action, headerStr = game.choose_action(mode=0)
                         game.makeMoveCastle(action)
-                        game.evalDiscBoard(headerStr)
+                        game.evalDiscBoardHeur(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
                     else:
@@ -136,33 +139,34 @@ async def on_message(msg):
                         game.aiRecState = 1
                         await msg.channel.send("You have chosen manual mode!")
                         action, headerStr = game.choose_action(mode=1, init=True)
-                    game.evalDiscBoard(headerStr)
+                    game.evalDiscBoardHeur(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
                 elif("2" in cmd1): 
                     game.gameState = 2
                     await msg.channel.send("You have chosen to play against an AI!")
                     headerStr = ("MINIMAX AB: Waiting...\n------------------\nPLAYER: Your turn!\n")
-                    game.evalDiscBoard(headerStr)
+                    game.evalDiscBoardHeur(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
                 elif("3" in cmd1): 
                     game.gameState = 3
-                    
                     await msg.channel.send("You have chosen to watch the AI play itself!")
-                    action, headerStr = game.choose_action(mode=3, init=True)
-                    game.makeMoveCastle(action)
-                    game.evalDiscBoard(headerStr)
+                    headerStr = ("MINIMAX : Waiting...\n")
+                    headerStr += ("------------------\n")
+                    headerStr += ("MINIMAX : Waiting...\n")
+                    game.evalDiscBoardHeur(headerStr)
                     game.msg1 = await msg.channel.send(game.msg_text_1)
                     game.msg2 = await msg.channel.send(game.msg_text_2)
-                    prevMove = action
+                    prevMove = ""
                     while(game.gameOver() == False and game.gameState == 3):
                         action, headerStr = game.choose_action(mode=3, prevMove=prevMove)
                         print("Heuristic: ", game.heuristic)
                         game.makeMoveCastle(action)
-                        game.evalDiscBoard(headerStr)
+                        game.evalDiscBoardHeur(headerStr)
                         await game.msg1.edit(content=game.msg_text_1)
                         await game.msg2.edit(content=game.msg_text_2)
+                        prevMove = action
                         
                 else:
                     game.gameState = -1

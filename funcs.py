@@ -9,7 +9,7 @@ import numpy as np
 import multiprocessing
 from itertools import starmap
 import itertools
-import nn_prediction
+# import nn_prediction
 
 
 class MiniMaxChess:
@@ -429,9 +429,9 @@ class MiniMaxChess:
     def castleEval(self):
         val = 0
         if(self.board.has_castling_rights(chess.WHITE)==True):
-            val+=2
+            val+=3
         if(self.board.has_castling_rights(chess.BLACK)==True):
-            val-=2
+            val-=3
         if(self.hasWhiteCastled==True):
             val+=10
         if(self.hasBlackCastled==True):
@@ -533,11 +533,28 @@ class MiniMaxChess:
         eStr += ("\n:black_large_square::regional_indicator_a::regional_indicator_b::regional_indicator_c::regional_indicator_d::regional_indicator_e::regional_indicator_f::regional_indicator_g::regional_indicator_h:")
         return eStr
 
-    def evalDiscBoard(self, headerMsg):
+    def evalDiscBoardHeur(self, headerMsg):
         returnStr = headerMsg
         returnStr += self.emojiConvert()
         print(str(self.board))
         returnStr2 = ("\nCurrent Heuristic: " + str(self.heuristic()) + "\n")
+        
+        if(self.board.is_checkmate()):
+            returnStr2 += ("\n" + self.getCurPlayer() + " has been checkmated! " + self.getNextPlayer() + " wins!")
+        elif(self.board.is_check()):
+            returnStr2 += ("\n" + self.getCurPlayer() + " is in check! Possible moves are: " + str(self.getMoveList()))
+        elif(self.board.is_stalemate()):
+            returnStr2 += ("\nStalemate! The game ends in a draw")
+        else:
+            returnStr2 += ("\nPossible moves for " + self.getCurPlayer() + ": " + str(self.getMoveList()))
+        self.msg_text_1 = returnStr
+        self.msg_text_2 = returnStr2
+
+    def evalDiscBoard(self, headerMsg):
+        returnStr = headerMsg
+        returnStr += self.emojiConvert()
+        print(str(self.board))
+        returnStr2 = ""
         
         if(self.board.is_checkmate()):
             returnStr2 += ("\n" + self.getCurPlayer() + " has been checkmated! " + self.getNextPlayer() + " wins!")
@@ -593,11 +610,11 @@ class MiniMaxChess:
         #init true if first move, false if not
         
         start_time = time.time()
-        if(self.getCurPlayer() == "white"):
-            eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
-        else:
-            eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
         if(mode==0):
+            if(self.getCurPlayer() == "white"):
+                eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
+            else:
+                eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
             returnStr = ("MINIMAX : Done, chosen move = %s\n" % action)
             returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
             returnStr += ("PLAYER : Your turn!\n")
@@ -616,6 +633,10 @@ class MiniMaxChess:
                     returnStr += ("------------------\n")
                     returnStr += ("PLAYER2 : Done, chosen move = %s\n" % prevMove)
         elif(mode==2):
+            if(self.getCurPlayer() == "white"):
+                eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
+            else:
+                eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
             if(self.getCurPlayer() == "black"):
                 returnStr = ("PLAYER1 : Done, chosen move = %s\n" % prevMove)
                 returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
@@ -631,6 +652,10 @@ class MiniMaxChess:
                     returnStr += ("PLAYER2 : Done, chosen move = %s\n" % prevMove)
         elif(mode==3):
             if(self.getCurPlayer() == "black"):
+                if(self.getCurPlayer() == "white"):
+                    eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
+                else:
+                    eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
                 returnStr = ("MINIMAX : Previous move = %s\n" % prevMove)
                 returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
                 returnStr += ("MINIMAX : Chosen move: %s\n" % action)
@@ -640,6 +665,10 @@ class MiniMaxChess:
                     returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
                     returnStr += ("MINIMAX : Waiting...\n")
                 else:
+                    if(self.getCurPlayer() == "white"):
+                        eval_score, action = self.minimax(self, self.getFen(),0,True,float('-inf'),float('inf'), start_time)
+                    else:
+                        eval_score, action = self.minimax(self, self.getFen(),0,False,float('-inf'),float('inf'), start_time)
                     returnStr = ("MINIMAX : Chosen move: %s\n" % action)
                     returnStr += ("--- %s seconds ---\n" % str(round((time.time() - start_time), 3)))
                     returnStr += ("MINIMAX : Previous move = %s\n" % prevMove)
