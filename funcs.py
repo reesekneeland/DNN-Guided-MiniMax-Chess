@@ -724,6 +724,7 @@ class MiniMaxChess:
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
         move_evals = []
+        #move_evals_nn = [] #Uncomment when  we employ neural network
         for move_key in possible_actions:
             ret = chessObj.makeMove(str(move_key))
             boardHash = self.computeHash(chessObj.board)
@@ -733,6 +734,8 @@ class MiniMaxChess:
                 heur = chessObj.heuristic()
                 self.hashMap[self.computeHash(chessObj.board)] = heur
             move_evals.append([move_key, heur])
+            #prediction = nn_prediction(chessObj.board) #Uncomment when we employ neural network
+            #move_evals.append([move_key, prediction]) #Uncomment when we employ neural network
             chessObj.board.pop()
         # if(is_max_turn): 
         #     move_evals = np.array(sorted(move_evals, key=lambda x: -x[1]))
