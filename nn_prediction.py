@@ -1,13 +1,12 @@
 import torch
 import numpy as np
-import nn_training
+#import nn_training
 #import neuralnet.pth
 
 
 import time
 from collections import OrderedDict
 
-import torch
 import numpy as np
 torch.manual_seed(42)
 
