@@ -59,7 +59,7 @@ def nn_prediction(fen_map): #input of legal move passed in an fen format. Predic
           #  {"layer_count": 6, "batch_size": 1024},
            ]
     model = EvaluationModel(layer_count = 4, batch_size = 512, learning_rate=1e-3)
-    model.load_state_dict(torch.load('neuralnet.pth'))
+    model.load_state_dict(torch.load('chess_model.pth'))
 
     #model = torch.load('neuralnet.pth') #Determine how we can load in the neural network model.
     model.eval() # Set model to eval mode
