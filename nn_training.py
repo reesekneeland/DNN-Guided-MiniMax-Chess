@@ -1,23 +1,21 @@
 import torch
-import numpy as np
 torch.manual_seed(42)
 
-import subprocess
-import sys
+gpu_avail = torch.cuda.is_available()
+print(f"Is the GPU available? {gpu_avail}")
 
-from pip._internal import main as pipmain
-
-#!pip install peewee pytorch-lightning
-#Download before running wget if you don't already have wget installed: https://eternallybored.org/misc/wget/
-#Copy and paste wget.exe found in downloads to C:\Windows\System32 directory.
-#!wget https://storage.googleapis.com/chesspic/datasets/2021-07-31-lichess-evaluations-37MM.db.gz
-#Gzip can be downloader here: http://gnuwin32.sourceforge.net/packages/gzip.htm after installing navigate to C:\Program Files (x86)\GnuWin32\bin
-#copy gzip.exe and place within C:\Windows\System32 directory.
-#!gzip -d "2021-07-31-lichess-evaluations-37MM.db.gz"
-#!rm "2021-07-31-lichess-evaluations-37MM.db.gz"
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+print("Device", device)
 
 from peewee import *
 import base64
+import numpy as np
+
+db = SqliteDatabase('2021-07-31-lichess-evaluations-37MM.db')
+
+from peewee import *
+import base64
+import numpy as np
 
 db = SqliteDatabase('2021-07-31-lichess-evaluations-37MM.db')
 
@@ -33,24 +31,25 @@ class Evaluations(Model):
   def binary_base64(self):
     return base64.b64encode(self.binary)
 db.connect()
+#Query database
+#cursor = db.cursor()
+#cursor.execute("select * from evaluations limit 7")
+#row = cursor.fetchone()
+#print(row[1])
 
-#connection = db.cursor()
-#connection.execute("select * from evaluations")
-#result = connection.fetchall()
-#print(result)
-
-#print(Evaluations.id)
 LABEL_COUNT = 37164639
-#print(LABEL_COUNT)
-#print(str(Evaluations))
-eval = Evaluations.get(Evaluations.id == 1)
+print(LABEL_COUNT)
 
+eval = Evaluations.get(Evaluations.id == 1)
+print(Evaluations)
+print(eval.binary)
+print(eval.fen)
 split = eval.fen.split(" ")
 mapping = split[0]
 mapping = mapping.encode('utf-8')
 mapping = np.frombuffer(mapping, dtype=np.uint8)
 mapping = np.unpackbits(mapping, axis=0).astype(np.single)
-
+print(len(mapping))
 print(eval.binary_base64())
 
 from logging import exception
@@ -75,7 +74,6 @@ class EvaluationDataset(IterableDataset):
     return self.count
   def __getitem__(self, idx):
     eval = Evaluations.get(Evaluations.id == idx+1)
-    #print(eval)
     split = eval.fen.split(" ")
     mapping = split[0]
     mapping = mapping.encode('utf-8')
@@ -87,151 +85,136 @@ class EvaluationDataset(IterableDataset):
         try:
           array[value] = array[value] + bin[value]
           count = count + 1
-        except:
+        except Exception as e:
           break
-    #print(array)
     #bin = np.frombuffer(eval.binary, dtype=np.uint8)
     #bin = np.unpackbits(bin, axis=0).astype(np.single)
-    #print(len(array))
     eval.eval = max(eval.eval, -15)
     eval.eval = min(eval.eval, 15)
     ev = np.array([eval.eval]).astype(np.single)
-    array = array.astype(np.single)
     return {'binary':array, 'eval':ev}    
 
 dataset = EvaluationDataset(count=LABEL_COUNT)
 
-# Start tensorboard.
-#%load_ext tensorboard
-#%tensorboard --logdir lightning_logs/
+train_dataloader = DataLoader(dataset, batch_size=524, drop_last=True)
 
-dataset = EvaluationDataset(count=LABEL_COUNT)
-dataset.__getitem__(1)
-
-
+import torch
+from torch.utils.data import Dataset
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter # TensorBoard support
+from tqdm.notebook import tqdm
 import time
-from collections import OrderedDict
+import os
+import math
+import numpy as np 
+import seaborn as sns
+sns.set()
+writer = SummaryWriter('runs/chess')
+import torch
+torch.manual_seed(42)
 
-class EvaluationModel(pl.LightningModule):
-  def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=10):
-    super().__init__()
-    self.batch_size = batch_size
-    self.learning_rate = learning_rate
-    layers = []
-    for i in range(layer_count-1):
-      layers.append((f"linear-{i}", nn.Linear(808, 808)))
-      layers.append((f"relu-{i}", nn.ReLU()))
-    layers.append((f"linear-{layer_count-1}", nn.Linear(808, 1)))
-    self.seq = nn.Sequential(OrderedDict(layers))
+gpu_avail = torch.cuda.is_available()
+print(f"Is the GPU available? {gpu_avail}")
 
-  def forward(self, x):
-    return self.seq(x)
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+print("Device", device)
 
-  def training_step(self, batch, batch_idx):
-    x, y = batch['binary'], batch['eval']
-    y_hat = self(x)
-    loss = F.l1_loss(y_hat, y)
-    self.log("train_loss", loss)
-    return loss
 
-  def configure_optimizers(self):
-    return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+input_dim = 808; hidden_dim = 808; output_dim = 1
 
-  def train_dataloader(self):
-    dataset = EvaluationDataset(count=LABEL_COUNT)
-    return DataLoader(dataset, batch_size=self.batch_size, num_workers=0, pin_memory=True)
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        #print(len(cleaned_data))
+        #print("Shape: ", {cleaned_data.shape})
+        # layers here
+        self.linear1 = torch.nn.Linear(input_dim, hidden_dim)
+        self.act_fn1 = torch.nn.ReLU() #may change - logisitc sigmoid for Xavier Initialization
+        self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn2 = torch.nn.ReLU()
+        self.linear3 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn3 = torch.nn.ReLU()
+        self.linear4 = torch.nn.Linear(hidden_dim, output_dim)
+        self.act_fn_end = torch.nn.Sigmoid()
 
-configs = [
-           {"layer_count": 4, "batch_size": 512},
-          #  {"layer_count": 6, "batch_size": 1024},
-           ]
-for config in configs:
-  version_name = f'{int(time.time())}-batch_size-{config["batch_size"]}-layer_count-{config["layer_count"]}'
-  logger = pl.loggers.TensorBoardLogger("lightning_logs", name="chessml", version=version_name)
-  trainer = pl.Trainer(precision=16,max_epochs=1,auto_lr_find=True,logger=logger) #first argument "gpus=1" removed
-  model = EvaluationModel(layer_count=config["layer_count"],batch_size=config["batch_size"],learning_rate=1e-3)
-  # trainer.tune(model)
-  # lr_finder = trainer.tuner.lr_find(model, min_lr=1e-6, max_lr=1e-3, num_training=25)
-  # fig = lr_finder.plot(suggest=True)
-  # fig.show()
-  trainer.fit(model)
-  break
-  
-from IPython.display import display, SVG
-from random import randrange
 
-SVG_BASE_URL = "https://us-central1-spearsx.cloudfunctions.net/chesspic-fen-image/" 
+        # initialize here
+        torch.nn.init.xavier_uniform_(self.linear1.weight)
+        torch.nn.init.xavier_uniform_(self.linear2.weight)
 
-def svg_url(fen):
-  fen_board = fen.split()[0]
-  return SVG_BASE_URL + fen_board
+    def forward(self, x):    
+      #
+      x = self.linear1(x)
+      x = self.act_fn1(x)
+      x = self.linear2(x)
+      x = self.act_fn2(x)
+      x = self.linear3(x)
+      x = self.act_fn3(x)
+      x = self.linear4(x)
+      x = self.act_fn_end(x)
+      return x
 
-def show_index(idx):
-  eval = Evaluations.select().where(Evaluations.id == idx+1).get()
-  batch = dataset[idx]
-  x, y = torch.tensor(batch['binary']), torch.tensor(batch['eval'])
-  y_hat = model(x)
-  loss = F.l1_loss(y_hat, y)
-  print(f'Idx {idx} Eval {y.data[0]:.2f} Prediction {y_hat.data[0]:.2f} Loss {loss:.2f}')
-  print(f'FEN {eval.fen}')
-  display(SVG(url=svg_url(eval.fen)))
+# STEP 2:
+# instantiate your network and use a cross entropy loss and set up your optimizer.  Use ADAM with defaults
+net = Net()
+net.to(device)
+loss_module = torch.nn.L1Loss()
+optimizer = torch.optim.Adam(net.parameters(), lr=0.001) #Default learning rate is 0.001
+# STEP 3:
+# train your model
+def train_model(model, optimizer, train_dataloader, loss_module, num_epochs):
+    # Set model to train mode
+    model.train()
+    model_plotted = False
+    # Training loop
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        count = 0
+        for value in tqdm(train_dataloader):
+            count = count + 1
+            x1 = value['binary']
+            y1 = value['eval']
+            x1 = x1.float(); y1 = y1.float()
+            x1 = x1.to(device)
+            y1 = y1.to(device)
 
-for i in range(5):
-  idx = randrange(LABEL_COUNT)
-  show_index(idx)
+            #Tensor Hook
+            if(epoch == 0):
+                writer.add_graph(net, x1)
+                
 
-# need to do better on "tactics" like 700756
+            ##Run the model on the input data
+            preds = model(x1)
+            #preds = preds.squeeze(dim=1) # Output is [Batch size, 1], but we want [Batch size]
 
-import chess
+            ## Step 3: Calculate the loss
+            loss = loss_module(preds, y1)
 
-MATERIAL_LOOKUP = {chess.KING:0,chess.QUEEN:9,chess.ROOK:5,chess.BISHOP:3,chess.KNIGHT:3,chess.PAWN:1}
+            ## Step 4: Perform backpropagation
+            # Before calculating the gradients, we need to ensure that they are all zero. 
+            # The gradients would not be overwritten, but actually added to the existing ones.
+            optimizer.zero_grad() 
+            # Perform backpropagation
+            loss.backward()
+            
+            ## Step 5: Update the parameters
+            optimizer.step()
 
-def avg(lst):
-    return sum(lst) / len(lst)
+            #Tensorboard hook
+            running_loss += loss.item()
+            running_loss /= len(train_dataloader)
+            writer.add_scalar('Training loss', running_loss/1000, count)
+            
+            
 
-def material_for_board(board):
-  eval = 0.0
-  for sq, piece in board.piece_map().items():
-    mat = MATERIAL_LOOKUP[piece.piece_type] 
-    if piece.color == chess.BLACK:
-      mat = mat * -1
-    eval += mat
-  return eval
-  
-def guess_zero_loss(idx):
-  eval = Evaluations.select().where(Evaluations.id == idx+1).get()
-  y = torch.tensor(eval.eval)
-  y_hat = torch.zeros_like(y)
-  loss = F.l1_loss(y_hat, y)
-  return loss
+            
+        print(model)
+        torch.save(model.state_dict(), 'chess_model.pth')
 
-def guess_material_loss(idx):
-  eval = Evaluations.select().where(Evaluations.id == idx+1).get()
-  board = chess.Board(eval.fen)
-  y = torch.tensor(eval.eval)
-  y_hat = torch.tensor(material_for_board(board))
-  loss = F.l1_loss(y_hat, y)
-  return loss
+train_model(net, optimizer, train_dataloader, loss_module, num_epochs = 1)
 
-def guess_model_loss(idx):
-  eval = Evaluations.select().where(Evaluations.id == idx+1).get()
-  batch = dataset[idx]
-  x, y = torch.tensor(batch['binary']), torch.tensor(batch['eval'])
-  y_hat = model(x)
-  loss = F.l1_loss(y_hat, y)
-  return loss
-
-zero_losses = []
-mat_losses = []
-model_losses = []
-for i in range(100):
-  idx = randrange(LABEL_COUNT)
-  zero_losses.append(guess_zero_loss(idx))
-  mat_losses.append(guess_material_loss(idx))
-  model_losses.append(guess_model_loss(idx))
-print(f'Guess Zero Avg Loss {avg(zero_losses)}')
-print(f'Guess Material Avg Loss {avg(mat_losses)}')
-print(f'Guess Model Avg Loss {avg(model_losses)}')
-print(model.get_parameter)
-
-torch.save(model, 'chess_model.pth')
+writer.flush()
+writer.close()
+#%tensorboard --logdir=runs/chess

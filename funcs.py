@@ -697,6 +697,7 @@ class MiniMaxChess:
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
         move_evals = []
+        #move_evals_nn = []
         for move_key in possible_actions:
             ret = chessObj.makeMove(str(move_key))
             boardHash = self.computeHash(chessObj.board)
@@ -712,7 +713,7 @@ class MiniMaxChess:
             
             #Prediction of how much move will help or hinder player, currently prediction is within range [-15, 15]
             #prediction = nn_prediction(neural_network_input)
-            
+            #move_evals_nn = ([move_key, prediction])
             chessObj.board.pop()
         if(is_max_turn): 
             move_evals = sorted(move_evals, key=lambda x: -x[1])
