@@ -608,7 +608,7 @@ class MiniMaxChess:
         #mode 1 for player UI, 
         #mode 2 for player UI with AI input
         #init true if first move, false if not
-        
+        action = ""
         start_time = time.time()
         if(mode==0):
             if(self.getCurPlayer() == "white"):
