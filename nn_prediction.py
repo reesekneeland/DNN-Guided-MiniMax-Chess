@@ -22,33 +22,66 @@ from torch.utils.data import Dataset, DataLoader, IterableDataset, random_split
 import pytorch_lightning as pl
 from random import randrange
 
-class EvaluationModel(pl.LightningModule):
-  def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=10):
-    super().__init__()
-    self.batch_size = batch_size
-    self.learning_rate = learning_rate
-    layers = []
-    for i in range(layer_count-1):
-      layers.append((f"linear-{i}", nn.Linear(808, 808)))
-      layers.append((f"relu-{i}", nn.ReLU()))
-    layers.append((f"linear-{layer_count-1}", nn.Linear(808, 1)))
-    self.seq = nn.Sequential(OrderedDict(layers))
+#class EvaluationModel(pl.LightningModule):
+#  def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=10):
+#    super().__init__()
+#    self.batch_size = batch_size
+#    self.learning_rate = learning_rate
+#    layers = []
+#    for i in range(layer_count-1):
+#      layers.append((f"linear-{i}", nn.Linear(808, 808)))
+#      layers.append((f"relu-{i}", nn.ReLU()))
+#    layers.append((f"linear-{layer_count-1}", nn.Linear(808, 1)))
+#    self.seq = nn.Sequential(OrderedDict(layers))
+#
+#  def forward(self, x):
+#    return self.seq(x)
+#
+#  def training_step(self, batch, batch_idx):
+#    x, y = batch['binary'], batch['eval']
+#    y_hat = self(x)
+#    loss = F.l1_loss(y_hat, y)
+#    self.log("train_loss", loss)
+#    return loss
+#
+#  def configure_optimizers(self):
+#    return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        #print(len(cleaned_data))
+        #print("Shape: ", {cleaned_data.shape})
+        # layers here
+        input_dim = 808; hidden_dim = 808; output_dim = 1
+        self.linear1 = torch.nn.Linear(input_dim, hidden_dim)
+        self.act_fn1 = torch.nn.ReLU() #may change - logisitc sigmoid for Xavier Initialization
+        self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn2 = torch.nn.ReLU()
+        self.linear3 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn3 = torch.nn.ReLU()
+        self.linear4 = torch.nn.Linear(hidden_dim, output_dim)
+        #self.act_fn_end = torch.nn.Sigmoid()
 
-  def forward(self, x):
-    return self.seq(x)
 
-  def training_step(self, batch, batch_idx):
-    x, y = batch['binary'], batch['eval']
-    y_hat = self(x)
-    loss = F.l1_loss(y_hat, y)
-    self.log("train_loss", loss)
-    return loss
+        # initialize here
+        torch.nn.init.xavier_uniform_(self.linear1.weight)
+        torch.nn.init.xavier_uniform_(self.linear2.weight)
+        torch.nn.init.xavier_uniform_(self.linear3.weight)
+        torch.nn.init.xavier_uniform_(self.linear4.weight)
 
-  def configure_optimizers(self):
-    return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+    def forward(self, x):    
+      #
+        x = self.linear1(x)
+        x = self.act_fn1(x)
+        x = self.linear2(x)
+        x = self.act_fn2(x)
+        x = self.linear3(x)
+        x = self.act_fn3(x)
+        x = self.linear4(x)
+      #x = self.act_fn_end(x)
+        return x
     
-    
-    
+
     
     
 
@@ -58,7 +91,8 @@ def nn_prediction(fen_map): #input of legal move passed in an fen format. Predic
            {"layer_count": 4, "batch_size": 512},
           #  {"layer_count": 6, "batch_size": 1024},
            ]
-    model = EvaluationModel(layer_count = 4, batch_size = 512, learning_rate=1e-3)
+    #model = EvaluationModel(layer_count = 4, batch_size = 512, learning_rate=1e-3)
+    model = Net()
     model.load_state_dict(torch.load('chess_model.pth'))
 
     #model = torch.load('neuralnet.pth') #Determine how we can load in the neural network model.
