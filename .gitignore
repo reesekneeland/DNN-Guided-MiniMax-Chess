@@ -1,4 +1,10 @@
 tester.py
 __pycache__
 .env
+*.db
+*.db.gz
+*.pth
 temp
+/lightning_logs/
+/runs/
+/data/
