@@ -85,18 +85,8 @@ class Net(torch.nn.Module):
     
     
 
-def nn_prediction(fen_map): #input of legal move passed in an fen format. Prediction of advantage gain or lossed predicted and returned
+def predict(model, fen_map): #input of legal move passed in an fen format. Prediction of advantage gain or lossed predicted and returned
                             #range for move prediction outputted is [-15, 15].
-    config = [
-           {"layer_count": 4, "batch_size": 512},
-          #  {"layer_count": 6, "batch_size": 1024},
-           ]
-    #model = EvaluationModel(layer_count = 4, batch_size = 512, learning_rate=1e-3)
-    model = Net()
-    model.load_state_dict(torch.load('chess_model.pth'))
-
-    #model = torch.load('neuralnet.pth') #Determine how we can load in the neural network model.
-    model.eval() # Set model to eval mode
     with torch.no_grad(): # Deactivate gradients for the following code
         
         split = fen_map.split(" ") #Split fen mapping
@@ -104,22 +94,14 @@ def nn_prediction(fen_map): #input of legal move passed in an fen format. Predic
         mapping = mapping.encode('utf-8') #encode fen mapping of chess board only in utf-8
         bin = np.frombuffer(mapping, dtype=np.uint8)
         bin = np.unpackbits(bin, axis=0).astype(np.single) #unpack utf-8 format of fen mapping of chess board only
-        array = np.zeros(808) #byte length of unpacked fen mapping of chessboard only will vary depending upon how many pieces are left
+                                #byte length of unpacked fen mapping of chessboard only will vary depending upon how many pieces are left
                               #in game. Fen mapping of chessboard will never exceed 808 bytes therefore we employ 808 bytes as our input
                               #to the neural network.
-
-        for value in range(len(array)):
-            try:
-                array[value] = array[value] + bin[value]
-            except:
-                break
-        new_array = torch.from_numpy(array)
+        bin.resize((808,))
+        new_array = torch.from_numpy(bin)
         new_array = new_array.float()
         preds = model(new_array)
         prediction = preds[0]
-
-        print(prediction)
-            
-    return(prediction)
+    return(prediction.item())
     
-prediction = nn_prediction("rrrr/8/1ppppppp aw 1 0")
+# prediction = nn_prediction("rnb1kbnr/ppp2ppp/8/3pp3/4P2P/2N5/PPPP1P1P/R1BQKBNR b KQkq - 0 4")

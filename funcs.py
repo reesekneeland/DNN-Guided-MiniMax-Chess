@@ -9,7 +9,8 @@ import numpy as np
 import multiprocessing
 from itertools import starmap
 import itertools
-# import nn_prediction
+from nn_prediction import *
+import torch
 
 
 class MiniMaxChess:
@@ -40,6 +41,9 @@ class MiniMaxChess:
         self.msg_text_2 = ""
         self.msg1 = None
         self.msg2 = None
+        self.model = Net()
+        self.model.load_state_dict(torch.load('chess_model.pth'))
+        self.model.eval()
 
     def makeMoveHeur(self, sanStr):
         moveStr = str(self.board.parse_san(sanStr))
@@ -69,15 +73,15 @@ class MiniMaxChess:
         except:
             return 0
         if(move in self.board .legal_moves):
-            print("MOVE: ", move, self.board.is_castling(move))
+            # print("MOVE: ", move, self.board.is_castling(move))
             if(self.board.is_castling(move)):
-                print("IS CASTLING")
+                # print("IS CASTLING")
                 if(self.board.turn == chess.WHITE):
                     self.hasWhiteCastled = True
                 else:
                     self.hasBlackCastled = True
-            print("WHITE", self.hasWhiteCastled)
-            print("BLACK", self.hasBlackCastled)
+            # print("WHITE", self.hasWhiteCastled)
+            # print("BLACK", self.hasBlackCastled)
             self.board.push(move)
             return 1
         else:
@@ -592,15 +596,13 @@ class MiniMaxChess:
             return 100
         p, a, t = self.getPieceMap()
         attackMap = self.getAttackerMap(p, a, t)
-        totalHeuristic = 83 * math.atan(sum(attackMap)/1500)
-        totalHeuristic += self.castleEval()
-        # print("castle eval", self.castleEval())
-        # if(self.board.is_check()):
-        #     if(self.board.turn ==chess.WHITE):
-        #         totalHeuristic -=3
-        #     else:
-        #         totalHeuristic +=3 
-        # self.hashMap[self.computeHash(self.board)] = round(totalHeuristic, 2)
+        manualHeuristic = 83 * math.atan(sum(attackMap)/1500)
+        manualHeuristic += self.castleEval()
+        #Pass in Fen representation of possible move
+        #Prediction of how much move will help or hinder player, currently prediction is within range [-15, 15]
+        nn_prediction = predict(self.model, self.board.fen())
+        # totalHeuristic = (manualHeuristic + (3*nn_prediction))/2
+        totalHeuristic = 4 * nn_prediction
         return round(totalHeuristic, 2)
 
     def choose_action(self, mode=0, init=False, prevMove=""): 
@@ -697,7 +699,7 @@ class MiniMaxChess:
         best_value = float('-inf') if is_max_turn else float('inf')
         action = ""
         move_evals = []
-        #move_evals_nn = []
+        move_evals_nn = []
         for move_key in possible_actions:
             ret = chessObj.makeMove(str(move_key))
             boardHash = self.computeHash(chessObj.board)
@@ -707,13 +709,6 @@ class MiniMaxChess:
                 heur = chessObj.heuristic()
                 self.hashMap[self.computeHash(chessObj.board)] = heur
             move_evals.append([move_key, heur])
-            
-            #Pass in Fen representation of possible move
-            #neural_network_input = chessObj.board.fen()
-            
-            #Prediction of how much move will help or hinder player, currently prediction is within range [-15, 15]
-            #prediction = nn_prediction(neural_network_input)
-            #move_evals_nn = ([move_key, prediction])
             chessObj.board.pop()
         if(is_max_turn): 
             move_evals = sorted(move_evals, key=lambda x: -x[1])
