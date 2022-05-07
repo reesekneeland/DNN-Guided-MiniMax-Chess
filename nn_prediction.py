@@ -23,19 +23,24 @@ import pytorch_lightning as pl
 from random import randrange
 
 class EvaluationModel(pl.LightningModule):
- def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=10):
+ def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=4):
    super().__init__()
    self.batch_size = batch_size
    self.learning_rate = learning_rate
-   layers = []
-   for i in range(layer_count-1):
-     layers.append((f"linear-{i}", nn.Linear(808, 808)))
-     layers.append((f"relu-{i}", nn.ReLU()))
-   layers.append((f"linear-{layer_count-1}", nn.Linear(808, 1)))
-   self.seq = nn.Sequential(OrderedDict(layers))
+   
+   self.fc1 = nn.Linear(808,808)
+   self.fc2 = nn.Linear(808,808)
+   self.fc3 = nn.Linear(808, 808)
+   self.out = nn.Linear(808,1)
+   
 
  def forward(self, x):
-   return self.seq(x)
+    x = x.float()
+    x = F.relu(self.fc1(x))
+    x = F.relu(self.fc2(x))
+    x = F.relu(self.fc3(x))
+
+    return self.out(x)
 
  def training_step(self, batch, batch_idx):
    x, y = batch['binary'], batch['eval']
