@@ -41,7 +41,7 @@ class MiniMaxChess:
         self.msg_text_2 = ""
         self.msg1 = None
         self.msg2 = None
-        self.model = Net()
+        self.model = EvaluationModel()
         self.model.load_state_dict(torch.load('chess_model.pth'))
         self.model.eval()
 
