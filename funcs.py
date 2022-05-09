@@ -601,8 +601,8 @@ class MiniMaxChess:
         #Pass in Fen representation of possible move
         #Prediction of how much move will help or hinder player, currently prediction is within range [-15, 15]
         nn_prediction = predict(self.model, self.board.fen())
-        # totalHeuristic = (manualHeuristic + (3*nn_prediction))/2
-        totalHeuristic = 4 * nn_prediction
+        totalHeuristic = (manualHeuristic + (2*nn_prediction))/1.4
+        # totalHeuristic = 4 * nn_prediction
         #print(totalHeuristic)
         return round(totalHeuristic, 2)
 
