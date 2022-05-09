@@ -22,71 +22,38 @@ from torch.utils.data import Dataset, DataLoader, IterableDataset, random_split
 import pytorch_lightning as pl
 from random import randrange
 
-class EvaluationModel(pl.LightningModule):
- def __init__(self,learning_rate=1e-3,batch_size=1024,layer_count=4):
-   super().__init__()
-   self.batch_size = batch_size
-   self.learning_rate = learning_rate
-   
-   self.fc1 = nn.Linear(808,808)
-   self.fc2 = nn.Linear(808,808)
-   self.fc3 = nn.Linear(808, 808)
-   self.out = nn.Linear(808,1)
-   
 
- def forward(self, x):
-    x = x.float()
-    x = F.relu(self.fc1(x))
-    x = F.relu(self.fc2(x))
-    x = F.relu(self.fc3(x))
-
-    return self.out(x)
-
- def training_step(self, batch, batch_idx):
-   x, y = batch['binary'], batch['eval']
-   y_hat = self(x)
-   loss = F.l1_loss(y_hat, y)
-   self.log("train_loss", loss)
-   return loss
-
- def configure_optimizers(self):
-   return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-   
-   
-# class Net(torch.nn.Module):
-    # def __init__(self):
-        # super(Net, self).__init__()
-        # #print(len(cleaned_data))
-        # #print("Shape: ", {cleaned_data.shape})
-        # # layers here
-        # input_dim = 808; hidden_dim = 808; output_dim = 1
-        # self.linear1 = torch.nn.Linear(input_dim, hidden_dim)
-        # self.act_fn1 = torch.nn.ReLU() #may change - logisitc sigmoid for Xavier Initialization
-        # self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim)
-        # self.act_fn2 = torch.nn.ReLU()
-        # self.linear3 = torch.nn.Linear(hidden_dim, hidden_dim)
-        # self.act_fn3 = torch.nn.ReLU()
-        # self.linear4 = torch.nn.Linear(hidden_dim, output_dim)
-        # #self.act_fn_end = torch.nn.Sigmoid()
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        input_dim = 808; hidden_dim = 808; output_dim = 1
+        self.linear1 = torch.nn.Linear(input_dim, hidden_dim)
+        self.act_fn1 = torch.nn.ReLU() #may change - logisitc sigmoid for Xavier Initialization
+        self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn2 = torch.nn.ReLU()
+        self.linear3 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.act_fn3 = torch.nn.ReLU()
+        self.linear4 = torch.nn.Linear(hidden_dim, output_dim)
+        #self.act_fn_end = torch.nn.Sigmoid()
 
 
-        # # initialize here
-        # torch.nn.init.xavier_uniform_(self.linear1.weight)
-        # torch.nn.init.xavier_uniform_(self.linear2.weight)
-        # torch.nn.init.xavier_uniform_(self.linear3.weight)
-        # torch.nn.init.xavier_uniform_(self.linear4.weight)
+        # initialize here
+        torch.nn.init.xavier_uniform_(self.linear1.weight)
+        torch.nn.init.xavier_uniform_(self.linear2.weight)
+        torch.nn.init.xavier_uniform_(self.linear3.weight)
+        torch.nn.init.xavier_uniform_(self.linear4.weight)
 
-    # def forward(self, x):    
-      # #
-        # x = self.linear1(x)
-        # x = self.act_fn1(x)
-        # x = self.linear2(x)
-        # x = self.act_fn2(x)
-        # x = self.linear3(x)
-        # x = self.act_fn3(x)
-        # x = self.linear4(x)
-      # #x = self.act_fn_end(x)
-        # return x
+    def forward(self, x):    
+      #
+        x = self.linear1(x)
+        x = self.act_fn1(x)
+        x = self.linear2(x)
+        x = self.act_fn2(x)
+        x = self.linear3(x)
+        x = self.act_fn3(x)
+        x = self.linear4(x)
+      #x = self.act_fn_end(x)
+        return x
     
 
     
@@ -95,7 +62,8 @@ class EvaluationModel(pl.LightningModule):
 def predict(model, fen_map): #input of legal move passed in an fen format. Prediction of advantage gain or lossed predicted and returned
                             #range for move prediction outputted is [-15, 15].
     with torch.no_grad(): # Deactivate gradients for the following code
-        
+        #model.load_state_dict(torch.load('chess_model.pth'))
+        #model.eval()
         split = fen_map.split(" ") #Split fen mapping
         mapping = split[0] #Retrieve mapping of pieces on chess board only
         mapping = mapping.encode('utf-8') #encode fen mapping of chess board only in utf-8
@@ -111,4 +79,5 @@ def predict(model, fen_map): #input of legal move passed in an fen format. Predi
         prediction = preds[0]
     return(prediction.item())
     
-#prediction = nn_prediction("rnb1kbnr/ppp2ppp/8/3pp3/4P2P/2N5/PPPP1P1P/R1BQKBNR b KQkq - 0 4")
+#prediction = predict(Net(), "rnb1kbnr/ppp2ppp/8/3pp3/4P2P/2N5/PPPP1P1P/R1BQKBNR b KQkq - 0 4")
+#print(prediction)

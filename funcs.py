@@ -41,7 +41,7 @@ class MiniMaxChess:
         self.msg_text_2 = ""
         self.msg1 = None
         self.msg2 = None
-        self.model = EvaluationModel()
+        self.model = Net()
         self.model.load_state_dict(torch.load('chess_model.pth'))
         self.model.eval()
 
@@ -603,6 +603,7 @@ class MiniMaxChess:
         nn_prediction = predict(self.model, self.board.fen())
         # totalHeuristic = (manualHeuristic + (3*nn_prediction))/2
         totalHeuristic = 4 * nn_prediction
+        #print(totalHeuristic)
         return round(totalHeuristic, 2)
 
     def choose_action(self, mode=0, init=False, prevMove=""): 
